@@ -24,14 +24,9 @@ D'autres animations (fichiers `.html`) s'ajoutent depuis le menu **Logi3D** de W
 
 1. Dans `logi3d.php`, augmenter la version aux **deux** endroits : la ligne `* Version:` et `define( 'LOGI3D_VERSION', … )`.
 2. Pour une animation incluse : déposer ou remplacer son fichier dans `animations/` (le nom du fichier donne le code court : `mon-animation.html` → `[logi3d_mon_animation]`).
-3. Créer une étiquette avec le même numéro, précédé de `v`, et la pousser :
+3. Envoyer les changements sur la branche `main` (commit + push, ou directement depuis github.com).
 
-   ```bash
-   git tag v1.6.0
-   git push origin main --tags
-   ```
-
-L'action GitHub **« Publier une version »** construit `logi3d.zip` et crée la release. Les sites voient la mise à jour dans les 6 heures (ou tout de suite avec « Rechercher une mise à jour »). Si les numéros ne correspondent pas, l'action s'arrête avec un message d'erreur.
+L'action GitHub **« Publier une version »** voit le nouveau numéro, construit `logi3d.zip` et crée la release `vX.Y.Z`. Les sites voient la mise à jour dans les 6 heures (ou tout de suite avec « Rechercher une mise à jour »). Tant que le numéro ne change pas, rien n'est publié. Si les deux numéros ne sont pas identiques, l'action s'arrête avec un message d'erreur.
 
 ## Structure
 

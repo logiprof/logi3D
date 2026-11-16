@@ -1,13 +1,15 @@
 name: Publier une version
 
-# Se lance quand on pousse une étiquette de version (ex. v1.6.0).
-# Construit logi3d.zip (dossier « logi3d/ ») et le publie dans une release GitHub.
+# Se lance à chaque envoi sur « main » (ou à la main depuis l'onglet Actions).
+# Lit la version dans logi3d.php. Si la release correspondante (ex. v1.6.0)
+# n'existe pas encore : construit logi3d.zip (dossier « logi3d/ ») et la publie.
 # Les sites WordPress qui ont Logi3D voient alors la mise à jour.
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,30 +20,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Vérifier que la version de l'étiquette correspond à logi3d.php
+      - name: Lire la version
+        id: v
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
           HEADER=$(grep -m1 -E '^\s*\*\s*Version:' logi3d.php | sed -E 's/.*Version:\s*//' | tr -d '[:space:]')
           CONST=$(grep -m1 "LOGI3D_VERSION'" logi3d.php | sed -E "s/.*'LOGI3D_VERSION', '([^']+)'.*/\1/")
-          echo "Étiquette : $TAG · en-tête : $HEADER · constante : $CONST"
-          if [ "$TAG" != "$HEADER" ] || [ "$TAG" != "$CONST" ]; then
-            echo "::error::La version de l'étiquette ($TAG) doit être identique à « Version: » ($HEADER) et à LOGI3D_VERSION ($CONST) dans logi3d.php."
+          echo "En-tête : $HEADER · constante : $CONST"
+          if [ "$HEADER" != "$CONST" ]; then
+            echo "::error::« Version: » ($HEADER) et LOGI3D_VERSION ($CONST) doivent être identiques dans logi3d.php."
             exit 1
+          fi
+          echo "version=$HEADER" >> "$GITHUB_OUTPUT"
+
+      - name: Vérifier si cette version est déjà publiée
+        id: exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "v${{ steps.v.outputs.version }}" >/dev/null 2>&1; then
+            echo "La version v${{ steps.v.outputs.version }} existe déjà : rien à publier."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Construire logi3d.zip
+        if: steps.exists.outputs.skip == 'false'
         run: |
           mkdir -p build/logi3d
-          rsync -a ./ build/logi3d/ --exclude '.git' --exclude '.github' --exclude 'build' --exclude 'README.md' --exclude '.gitattributes' --exclude '.gitignore'
+          git archive HEAD | tar -x -C build/logi3d
           cd build && zip -rq ../logi3d.zip logi3d
           cd .. && unzip -l logi3d.zip
 
       - name: Publier la release
+        if: steps.exists.outputs.skip == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" logi3d.zip --clobber
-          else
-            gh release create "$GITHUB_REF_NAME" logi3d.zip --title "Logi3D $GITHUB_REF_NAME" --generate-notes
-          fi
+          gh release create "v${{ steps.v.outputs.version }}" logi3d.zip \
+            --target "$GITHUB_SHA" \
+            --title "Logi3D v${{ steps.v.outputs.version }}" \
+            --generate-notes
