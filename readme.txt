@@ -23,5 +23,5 @@ Largeur
 L'animation prend toujours la largeur du contenu de la page ou de la leçon Sensei, comme le texte.
 
 Mises à jour
-Logi3D se met à jour tout seul depuis https://github.com/logiprof/logi3d
+Logi3D se met à jour tout seul depuis https://github.com/logiprof/logi3D
 (page Extensions → lien « Rechercher une mise à jour » pour vérifier tout de suite).

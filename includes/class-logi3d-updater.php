@@ -2,7 +2,7 @@
 /**
  * Logi3D – mises à jour automatiques depuis GitHub.
  *
- * Le site lit la dernière « release » du dépôt public logiprof/logi3d.
+ * Le site lit la dernière « release » du dépôt public logiprof/logi3D.
  * Si sa version est plus récente que celle installée, WordPress propose
  * la mise à jour (et l'installe tout seul, les mises à jour automatiques
  * étant activées pour Logi3D).
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Logi3D_Updater {
 
-	const REPO      = 'logiprof/logi3d';
+	const REPO      = 'logiprof/logi3D';
 	const SLUG      = 'logi3d';
 	const ASSET     = 'logi3d.zip';
 	const CACHE_KEY = 'logi3d_github_release';

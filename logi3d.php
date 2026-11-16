@@ -8,8 +8,8 @@
  * License: GPL-2.0-or-later
  * Text Domain: logi3d
  * Author: logiProf
- * Plugin URI: https://github.com/logiprof/logi3d
- * Update URI: https://github.com/logiprof/logi3d
+ * Plugin URI: https://github.com/logiprof/logi3D
+ * Update URI: https://github.com/logiprof/logi3D
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,7 +22,7 @@ define( 'LOGI3D_DIR', plugin_dir_path( __FILE__ ) );
 define( 'LOGI3D_URL', plugin_dir_url( __FILE__ ) );
 define( 'LOGI3D_OPTION', 'logi3d_animations' );
 
-/* Mises à jour automatiques depuis GitHub (dépôt logiprof/logi3d). */
+/* Mises à jour automatiques depuis GitHub (dépôt logiprof/logi3D). */
 require_once LOGI3D_DIR . 'includes/class-logi3d-updater.php';
 new Logi3D_Updater( LOGI3D_FILE, LOGI3D_VERSION );
 

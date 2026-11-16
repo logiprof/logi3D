@@ -4,7 +4,7 @@ Extension WordPress de **logiProf** : animations pédagogiques 3D pour la logist
 
 ## Installation
 
-1. Télécharger **logi3d.zip** depuis la [dernière version](https://github.com/logiprof/logi3d/releases/latest).
+1. Télécharger **logi3d.zip** depuis la [dernière version](https://github.com/logiprof/logi3D/releases/latest).
 2. WordPress → **Extensions → Ajouter → Téléverser une extension** → choisir le .zip → **Activer**.
 
 Ensuite, les nouvelles versions publiées ici arrivent toutes seules sur le site : Logi3D se met à jour automatiquement. Le lien **« Rechercher une mise à jour »** sous Logi3D, dans la page Extensions, force la vérification.
