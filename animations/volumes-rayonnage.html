@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Volumes d'un rayonnage à palettes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* LogiProf : gris anthracite + vert ; bleu = brut, orange = net. Dessin du rayonnage en tête, calculs dessous (ou à droite sur grand écran). */
+  --bg:#edf0f4; --surface:#ffffff; --ink:#2f3439; --muted:#566273; --line:#cfd6df;
+  --accent:#437a45; --accent-ink:#2f6b33; --brand:#444a50;
+  --brut:#2f6fdb; --net:#e2600c;
+  --upright:#2e5ea6; --beam:#f2b705; --wood:#b07d4a; --wood-d:#7a5230;
+  --t1:#13968a; --t2:#e09a0b; --t3:#c4470f; --t4:#7a52b3;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"Barlow","Segoe UI",system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+.wrap{padding:16px clamp(12px,2.2vw,24px) 18px;display:grid;gap:12px}
+header{display:grid;gap:2px;padding-right:min(170px,24%)}
+header .tag{font-family:var(--display);letter-spacing:.08em;text-transform:uppercase;font-size:14px;color:var(--accent-ink);display:flex;align-items:center;gap:8px}
+header .tag::before{content:"";width:22px;height:6px;background:linear-gradient(90deg,var(--brand) 0 50%,var(--accent) 50% 100%);border-radius:2px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(21px,2.6vw,28px);line-height:1.05;margin:0;text-wrap:balance}
+header p{margin:0;color:var(--muted);font-size:14px}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;width:max-content;max-width:100%}
+.tabs button{font:600 14px var(--body);border:0;background:transparent;color:var(--ink);padding:7px 14px;border-radius:7px;cursor:pointer}
+.tabs button:hover{background:var(--bg)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:#fff}
+.tabpane{display:none}
+.tabpane.on{display:grid;gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn{font:600 14px var(--body);border-radius:8px;padding:7px 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+.btn:disabled{opacity:.4;cursor:default}
+
+/* barre de commande */
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:inline-flex;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--surface);gap:3px}
+.seg button{font:600 13px var(--body);border:0;border-radius:6px;padding:6px 11px;background:transparent;color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brand);color:#fff}
+.cellnav{display:inline-flex;align-items:center;gap:6px}
+.cellnav .name{font-weight:700;min-width:150px;text-align:center;font-variant-numeric:tabular-nums}
+.cellnav .btn{padding:5px 10px}
+.bar .spacer{margin-left:auto}
+.hint{font-size:13px;color:var(--muted)}
+
+.main{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:1150px){ .main{grid-template-columns:minmax(0,1.75fr) minmax(320px,1fr);align-items:start} }
+.stage{padding:8px 8px 10px;display:grid;gap:6px}
+.stage svg{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;padding:0 8px;font-size:12.5px;color:var(--muted);align-items:center}
+.legend i{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.legend .bx{background:color-mix(in srgb,var(--brut) 18%,transparent);border:1.5px dashed var(--brut)}
+
+.panel{padding:14px 16px;display:grid;gap:10px;align-content:start}
+.panel .kicker{font-family:var(--display);text-transform:uppercase;letter-spacing:.08em;font-size:14px;color:var(--muted)}
+.panel h2{font-family:var(--display);font-size:22px;line-height:1.05;margin:0}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.formula{border-radius:10px;padding:9px 12px;background:var(--bg);border-left:6px solid var(--ink);display:grid;gap:4px;font-variant-numeric:tabular-nums}
+.formula.brut{border-left-color:var(--brut)} .formula.net{border-left-color:var(--net)} .formula.rate{border-left-color:var(--accent)}
+.f-sym{font-weight:700;font-size:13.5px}
+.f-num{font-size:13.5px;color:var(--muted)}
+.f-res{font-family:var(--display);font-weight:700;font-size:28px;line-height:1}
+.f-res small{font-size:17px}
+.formula.brut .f-res{color:var(--brut)} .formula.net .f-res{color:var(--net)} .formula.rate .f-res{color:var(--accent-ink)}
+.memo{font-size:12.5px;color:var(--muted)}
+.memo span{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:1px 5px;border-radius:4px;border:1px solid var(--line);margin-right:5px}
+table.t{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+table.t th,table.t td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right}
+table.t th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
+table.t th:first-child,table.t td:first-child{text-align:left}
+table.t tr.tot td{font-weight:700;border-bottom:0}
+table.t tbody tr[data-hl]{cursor:pointer}
+table.t tbody tr[data-hl]:hover td{background:var(--bg)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.bars{display:grid;gap:6px}
+.barrow{display:grid;gap:2px;font-size:12.5px}
+.track{height:12px;border-radius:4px;background:var(--bg);overflow:hidden;border:1px solid var(--line)}
+.track div{height:100%;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.track .b{background:var(--brut)} .track .n{background:var(--net)}
+.keep{font-size:13px;padding:7px 10px;border-radius:8px;background:color-mix(in srgb,var(--accent) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 45%,var(--surface));margin:0}
+.keep b{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;margin-right:6px}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+
+/* SVG du rayonnage */
+.dim line,.dim path{stroke:var(--ink);stroke-width:1.6;fill:none}
+.dim text{font:600 25px var(--body);fill:var(--ink)}
+.dim.small text{font-size:22px}
+.cellbox{fill:var(--brut);fill-opacity:0;stroke:transparent;stroke-width:3;cursor:pointer;transition:fill-opacity .3s}
+.cellbox:hover{fill-opacity:.07;stroke:var(--brut);stroke-dasharray:8 6}
+.cell.sel .cellbox{fill-opacity:.16;stroke:var(--brut);stroke-dasharray:10 7}
+.all .cellbox{fill-opacity:.09;stroke:var(--brut);stroke-width:1.6;stroke-dasharray:8 6}
+.cell .lab{font:700 19px var(--body);fill:var(--muted);pointer-events:none}
+.cell.sel .lab{fill:var(--brut)}
+.dimmed .cell:not(.sel) .pl{opacity:.5}
+.cell.sel .pl .load{stroke-width:2.6;stroke:var(--net)}
+.hl-off .pl{opacity:.25}
+.hl-off .pl.hl{opacity:1}
+.hl-off .cellbox.hl{fill-opacity:.2;stroke:var(--brut);stroke-dasharray:none}
+.pl{transition:transform .55s cubic-bezier(.2,.9,.3,1.15),opacity .35s;transition-delay:var(--d,0ms)}
+.drop .pl{transform:translateY(-140px);opacity:0;transition:none}
+.badge text{font:700 20px var(--body);fill:#fff;text-anchor:middle;dominant-baseline:central}
+.prof text{font:600 18px var(--body);fill:var(--muted)}
+.ttl{font:700 20px var(--body);fill:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+
+/* fiche + exercice */
+.sheet{padding:16px;display:grid;gap:12px}
+.sheet h2{font-family:var(--display);font-size:22px;margin:0}
+.sheet table{width:100%;border-collapse:collapse;font-size:14px}
+.sheet th,.sheet td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.sheet th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.sheet td.u{white-space:nowrap;font-weight:700}
+.sheet td .mm{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.sheet td.ab{font-family:var(--display);font-size:20px;font-weight:700;white-space:nowrap}
+.sheet td.ab em{font-style:normal;color:var(--accent)}
+.warn{border-radius:10px;padding:12px 14px;background:color-mix(in srgb,#d0453f 9%,var(--surface));border:1px solid color-mix(in srgb,#d0453f 45%,var(--surface));font-size:14px;display:grid;gap:6px}
+.warn strong{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:15px;color:#c0392f}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;align-items:start}
+.scen{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:14px}
+.scen ul{margin:4px 0 0;padding-left:18px}
+.q{display:grid;grid-template-columns:1fr 130px 22px;gap:8px;align-items:center}
+.q label{font-weight:600;font-size:14.5px}
+.q input{width:100%;font:600 16px var(--body);padding:6px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+.q input.ok{border-color:#2f9e5a;background:color-mix(in srgb,#2f9e5a 12%,var(--surface))}
+.q input.ko{border-color:#d0453f;background:color-mix(in srgb,#d0453f 12%,var(--surface))}
+.score{font-weight:600;min-height:1.4em}
+.corr{font-size:13.5px;background:var(--bg);border-radius:10px;padding:10px 12px;display:grid;gap:5px;font-variant-numeric:tabular-nums}
+.corr[hidden]{display:none}
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:620px){ header{padding-right:0} header p{display:none} .q{grid-template-columns:1fr 110px 18px} }
+@media (prefers-reduced-motion: reduce){ .pl,.track div{transition:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">Logistique · Rayonnages à palettes</div>
+    <h1>Volumes d'un rayonnage à palettes</h1>
+    <p>Clique sur une alvéole pour calculer son volume brut et son volume net, ou passe en « Rayonnage complet ».</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button type="button" role="tab" data-go="anim" aria-selected="true">Rayonnage</button>
+    <button type="button" role="tab" data-go="fiche" aria-selected="false">Formules et lexique</button>
+    <button type="button" role="tab" data-go="exo" aria-selected="false">À toi de jouer</button>
+  </nav>
+
+  <!-- ===== Rayonnage ===== -->
+  <div class="tabpane on" data-tab="anim">
+    <div class="bar">
+      <div class="seg" role="group" aria-label="Affichage">
+        <button type="button" id="mCell" aria-pressed="true">Alvéole par alvéole</button>
+        <button type="button" id="mAll" aria-pressed="false">Rayonnage complet</button>
+      </div>
+      <div class="cellnav" id="cellnav">
+        <button class="btn" type="button" id="cPrev" aria-label="Alvéole précédente">◀</button>
+        <span class="name" id="cName"></span>
+        <button class="btn" type="button" id="cNext" aria-label="Alvéole suivante">▶</button>
+      </div>
+      <button class="btn spacer" type="button" id="replay">↻ Rejouer</button>
+    </div>
+    <div class="main">
+      <section class="card stage" aria-label="Dessin du rayonnage">
+        <svg id="rack" role="img" aria-label="Rayonnage à palettes vu de face, avec vue de côté"></svg>
+        <div class="legend" id="legend"></div>
+      </section>
+      <aside class="card panel" id="panel" aria-live="polite"></aside>
+    </div>
+  </div>
+
+  <!-- ===== Formules et lexique ===== -->
+  <div class="tabpane" data-tab="fiche">
+    <div class="two">
+      <section class="card sheet">
+        <h2>Formules</h2>
+        <table>
+          <thead><tr><th>Grandeur</th><th>Formule</th><th>Unité</th></tr></thead>
+          <tbody>
+            <tr><td>Volume brut d'une alvéole</td><td>Longueur de l'alvéole × profondeur × hauteur libre (entre deux lisses)<span class="mm">Mémo : VBS = L × P × hauteur libre</span></td><td class="u">m³</td></tr>
+            <tr><td>Volume net d'une alvéole</td><td>Σ (nombre de palettes × 1 m² × hauteur de charge)<span class="mm">Mémo : VNS = Σ (palettes × 1 × h)</span></td><td class="u">m³</td></tr>
+            <tr><td>Volume brut du rayonnage</td><td>Somme des volumes bruts de toutes les alvéoles</td><td class="u">m³</td></tr>
+            <tr><td>Volume net du rayonnage</td><td>Somme des volumes nets de toutes les alvéoles</td><td class="u">m³</td></tr>
+            <tr><td>Taux d'utilisation du volume</td><td>Volume net de stockage ÷ volume brut de stockage × 100<span class="mm">Mémo : VNS ÷ VBS × 100</span></td><td class="u">%</td></tr>
+            <tr><td>Volume total du rayonnage (espace occupé)</td><td>Largeur de l'espace × profondeur × hauteur du rayonnage</td><td class="u">m³</td></tr>
+          </tbody>
+        </table>
+        <p class="keep"><b>Rappel</b>La hauteur de charge comprend le support (la palette). Une palette EUR mesure 1,20 m × 0,80 m = 0,96 m² : pour le calcul, on l'arrondit à 1 m².</p>
+      </section>
+      <section class="card sheet">
+        <h2>Lexique des abréviations</h2>
+        <table>
+          <thead><tr><th>Abréviation</th><th>Signification</th><th>Unité</th></tr></thead>
+          <tbody>
+            <tr><td class="ab"><em>V</em>BS</td><td><b>V</b>olume <b>B</b>rut de <b>S</b>tockage : l'espace disponible dans les alvéoles</td><td class="u">m³</td></tr>
+            <tr><td class="ab"><em>V</em>NS</td><td><b>V</b>olume <b>N</b>et de <b>S</b>tockage : l'espace réellement occupé par les palettes</td><td class="u">m³</td></tr>
+            <tr><td class="ab">L, P</td><td><b>L</b>ongueur et <b>P</b>rofondeur de l'alvéole</td><td class="u">m</td></tr>
+            <tr><td class="ab">h</td><td><b>h</b>auteur de charge de la palette (support compris)</td><td class="u">m</td></tr>
+          </tbody>
+        </table>
+        <div class="warn">
+          <strong>⚠ Attention en évaluation</strong>
+          <p style="margin:0">Ces abréviations servent <b>uniquement à t'aider à retenir les formules</b>. Dans une évaluation, tu écris les noms complets et tu montres chaque étape du calcul.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ===== Exercice ===== -->
+  <div class="tabpane" data-tab="exo">
+    <section class="card stage" aria-label="Rayonnage de l'exercice">
+      <svg id="rackEx" role="img" aria-label="Rayonnage de l'exercice"></svg>
+      <div class="legend" id="legendEx"></div>
+    </section>
+    <section class="card sheet">
+      <h2>À toi de jouer</h2>
+      <div class="scen" id="scen"></div>
+      <form id="exform" style="display:grid;gap:8px" novalidate>
+        <div class="q"><label for="e1" id="l1">Volume brut de l'alvéole (m³)</label><input id="e1" inputmode="decimal" autocomplete="off"><span id="k1"></span></div>
+        <div class="q"><label for="e2" id="l2">Volume net de l'alvéole (m³)</label><input id="e2" inputmode="decimal" autocomplete="off"><span id="k2"></span></div>
+        <div class="q"><label for="e3">Volume brut de stockage du rayonnage (m³)</label><input id="e3" inputmode="decimal" autocomplete="off"><span id="k3"></span></div>
+        <div class="q"><label for="e4">Volume net de stockage du rayonnage (m³)</label><input id="e4" inputmode="decimal" autocomplete="off"><span id="k4"></span></div>
+        <div class="q"><label for="e5">Taux d'utilisation du volume (%)</label><input id="e5" inputmode="decimal" autocomplete="off"><span id="k5"></span></div>
+        <div class="score" id="score"></div>
+        <div class="nav">
+          <button class="btn primary" type="submit">Vérifier</button>
+          <button class="btn" type="button" id="showc">Voir la correction</button>
+          <button class="btn" type="button" id="newex">Nouvel exercice</button>
+        </div>
+      </form>
+      <div class="corr" id="corr" hidden></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function $(id){ return document.getElementById(id); }
+
+/* ---------- format ---------- */
+function F(n, dec){
+  if (dec == null) dec = 3;
+  var p = Math.pow(10, dec), v = Math.round(n*p)/p, neg = v < 0; v = Math.abs(v);
+  var s = v.toFixed(dec).split('.');
+  var i = s[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  var d = (s[1] || '').replace(/0+$/, '');
+  return (neg ? '−' : '') + i + (d ? ',' + d : '');
+}
+function M(cm){ return (cm/100).toFixed(2).replace('.', ','); }   // cm → « 2,70 »
+
+/* ---------- données de l'exemple (relevées sur le plan) ----------
+   niveaux : hauteurs libres entre lisses, de bas en haut (cm)
+   cells[niveau][travée] = types des 3 palettes (0 = emplacement vide)            */
+var BASE = {
+  space:1200, depth:130, bayL:270, upW:10, beamH:15,
+  levels:[100,180,120,200],
+  types:{1:80, 2:100, 3:160},
+  cells:[
+    [[1,1,1],[1,1,1],[1,1,1],[1,1,1]],
+    [[3,1,1],[1,1,2],[3,3,3],[3,3,2]],
+    [[1,1,2],[2,1,1],[1,1,1],[1,1,1]],
+    [[3,3,3],[3,2,2],[2,2,2],[2,2,2]]
+  ]
+};
+var TCOL = {1:'--t1', 2:'--t2', 3:'--t3', 4:'--t4'};
+
+/* ---------- calculs ---------- */
+function geo(D){
+  var nb = D.cells[0].length, nl = D.levels.length;
+  var rackL = nb*D.bayL + (nb+1)*D.upW, x0 = (D.space - rackL)/2;
+  var zb = [0];
+  for (var k = 1; k < nl; k++) zb.push(zb[k-1] + D.levels[k-1] + D.beamH);
+  return {nb:nb, nl:nl, x0:x0, rackL:rackL, zb:zb, H:zb[nl-1] + D.levels[nl-1]};
+}
+function cellCalc(D, k, j){
+  var L = D.bayL/100, P = D.depth/100, h = D.levels[k]/100;
+  var brut = L*P*h, counts = {}, net = 0;
+  D.cells[k][j].forEach(function(t){ if (t){ counts[t] = (counts[t]||0) + 1; net += D.types[t]/100; } });
+  return {L:L, P:P, h:h, brut:brut, net:net, counts:counts};
+}
+function totals(D){
+  var g = geo(D), byLevel = [], byType = {}, brut = 0, net = 0;
+  for (var k = 0; k < g.nl; k++){
+    var b = g.nb * cellCalc(D, k, 0).brut;
+    byLevel.push(b); brut += b;
+    for (var j = 0; j < g.nb; j++) D.cells[k][j].forEach(function(t){ if (t) byType[t] = (byType[t]||0) + 1; });
+  }
+  Object.keys(byType).forEach(function(t){ net += byType[t]*D.types[t]/100; });
+  return {brut:brut, net:net, byLevel:byLevel, byType:byType, espace:(D.space/100)*(D.depth/100)*(g.H/100), H:g.H};
+}
+function netExpr(D, counts){
+  var parts = Object.keys(counts).sort(function(a,b){ return D.types[b]-D.types[a]; }).map(function(t){
+    return counts[t] + ' × 1 × ' + M(D.types[t]);
+  });
+  return parts.length ? parts.join(' + ') : '0 (alvéole vide)';
+}
+function cellName(k, j){ return 'Niveau ' + (k+1) + ' · travée ' + (j+1); }
+
+/* ---------- dessin ---------- */
+function render(svg, D, st){
+  var g = geo(D), Y = function(z){ return g.H - z; };
+  var W = D.space, xr = W + 30;                 // cotes de hauteur à droite
+  var px = xr + 140, pd = D.depth;              // vue de côté
+  var vbW = px + pd + 70, s = '';
+  svg.setAttribute('viewBox', '-60 -120 ' + (vbW + 60) + ' ' + (g.H + 200));
+
+  // sol + mur de la vue de côté
+  s += '<rect x="-40" y="' + Y(0) + '" width="' + (W + 80) + '" height="16" fill="#c9d0d8"/>';
+  s += '<rect x="' + (px - 20) + '" y="' + Y(0) + '" width="' + (pd + 60) + '" height="16" fill="#c9d0d8"/>';
+
+  // cote largeur de l'espace
+  s += '<g class="dim"><line x1="0" y1="-70" x2="' + W + '" y2="-70"/><line x1="0" y1="-84" x2="0" y2="' + Y(0) + '" stroke-dasharray="4 6" stroke-opacity=".5"/><line x1="' + W + '" y1="-84" x2="' + W + '" y2="' + Y(0) + '" stroke-dasharray="4 6" stroke-opacity=".5"/>'
+    + '<text x="' + (W/2) + '" y="-82" text-anchor="middle">' + F(D.space, 0) + ' cm (largeur de l’espace)</text></g>';
+
+  // lisses
+  for (var k = 1; k < g.nl; k++){
+    var yb = Y(g.zb[k]);
+    s += '<rect x="' + g.x0 + '" y="' + yb + '" width="' + g.rackL + '" height="' + D.beamH + '" rx="3" style="fill:var(--beam);stroke:#b78a00;stroke-width:1.2"/>';
+  }
+
+  // alvéoles + palettes
+  for (k = 0; k < g.nl; k++){
+    for (var j = 0; j < g.nb; j++){
+      var cx = g.x0 + D.upW + j*(D.bayL + D.upW), z0 = g.zb[k], hh = D.levels[k];
+      var sel = st.mode === 'cell' && st.sel && st.sel[0] === k && st.sel[1] === j;
+      var hlCell = st.hl && st.hl.level === k;
+      s += '<g class="cell' + (sel ? ' sel' : '') + '" data-cell="' + k + ',' + j + '">';
+      s += '<rect class="cellbox' + (hlCell ? ' hl' : '') + '" x="' + cx + '" y="' + Y(z0 + hh) + '" width="' + D.bayL + '" height="' + hh + '"/>';
+      var slots = D.cells[k][j], n = slots.length, pw = 80, gap = (D.bayL - n*pw)/(n+1);
+      slots.forEach(function(t, p){
+        if (!t) return;
+        var x = cx + gap + p*(pw + gap), h = D.types[t];
+        var hl = st.hl && ((st.hl.level === k) || (st.hl.type === t));
+        var delay = st.anim ? (k*260 + j*70 + p*30) : 0;
+        s += '<g class="pl' + (hl ? ' hl' : '') + '" style="--d:' + delay + 'ms">' + pallet(x, Y(z0), h, t, pw) + '</g>';
+      });
+      s += '<text class="lab" x="' + (cx + 8) + '" y="' + (Y(z0 + hh) + 20) + '">N' + (k+1) + '·T' + (j+1) + '</text>';
+      s += '</g>';
+    }
+  }
+
+  // montants (devant les lisses)
+  var upTop = Math.min(g.H, g.zb[g.nl-1] + 40);
+  for (var u = 0; u <= g.nb; u++){
+    var ux = g.x0 + u*(D.bayL + D.upW);
+    s += '<rect x="' + ux + '" y="' + Y(upTop) + '" width="' + D.upW + '" height="' + upTop + '" rx="2" style="fill:var(--upright)"/>';
+    s += '<rect x="' + (ux - 3) + '" y="' + (Y(0) - 14) + '" width="' + (D.upW + 6) + '" height="14" fill="#1e3b6b"/>';
+  }
+
+  // cotes des hauteurs libres + hauteur totale
+  s += '<g class="dim small">';
+  for (k = 0; k < g.nl; k++){
+    var a = Y(g.zb[k]), b = Y(g.zb[k] + D.levels[k]);
+    s += '<line x1="' + xr + '" y1="' + a + '" x2="' + xr + '" y2="' + b + '"/><line x1="' + (xr-8) + '" y1="' + a + '" x2="' + (xr+8) + '" y2="' + a + '"/><line x1="' + (xr-8) + '" y1="' + b + '" x2="' + (xr+8) + '" y2="' + b + '"/>';
+    s += '<text x="' + (xr + 12) + '" y="' + ((a+b)/2 + 7) + '">' + D.levels[k] + '</text>';
+  }
+  var xt = xr + 68;
+  s += '<line x1="' + xt + '" y1="' + Y(0) + '" x2="' + xt + '" y2="' + Y(g.H) + '"/><line x1="' + (xt-8) + '" y1="' + Y(0) + '" x2="' + (xt+8) + '" y2="' + Y(0) + '"/><line x1="' + (xt-8) + '" y1="' + Y(g.H) + '" x2="' + (xt+8) + '" y2="' + Y(g.H) + '"/>';
+  s += '<text x="' + (xt + 12) + '" y="' + (g.H/2) + '">' + g.H + '</text></g>';
+
+  // vue de côté
+  s += '<g class="prof"><text class="ttl" x="' + (px + pd/2) + '" y="-82" text-anchor="middle">Vue de côté</text>';
+  s += '<rect x="' + (px + pd) + '" y="' + Y(g.H + 30) + '" width="16" height="' + (g.H + 30) + '" fill="#c9d0d8"/>';
+  for (k = 0; k < g.nl; k++){
+    var maxT = 0; for (j = 0; j < g.nb; j++) D.cells[k][j].forEach(function(t){ if (t && D.types[t] > (maxT ? D.types[maxT] : 0)) maxT = t; });
+    if (k > 0) s += '<rect x="' + px + '" y="' + Y(g.zb[k]) + '" width="' + (pd - 12) + '" height="' + D.beamH + '" style="fill:var(--beam);stroke:#b78a00"/>';
+    if (maxT) s += '<g class="pl" style="--d:' + (st.anim ? k*260 : 0) + 'ms">' + pallet(px + 2, Y(g.zb[k]), D.types[maxT], maxT, Math.min(120, pd - 10), true) + '</g>';
+  }
+  [px, px + pd - 14].forEach(function(x){ s += '<rect x="' + x + '" y="' + Y(upTop) + '" width="8" height="' + upTop + '" style="fill:var(--upright)"/>'; });
+  s += '<g class="dim small"><line x1="' + px + '" y1="' + (Y(0) + 42) + '" x2="' + (px + pd) + '" y2="' + (Y(0) + 42) + '"/><line x1="' + px + '" y1="' + (Y(0) + 32) + '" x2="' + px + '" y2="' + (Y(0) + 52) + '"/><line x1="' + (px+pd) + '" y1="' + (Y(0) + 32) + '" x2="' + (px+pd) + '" y2="' + (Y(0) + 52) + '"/>'
+    + '<text x="' + (px + pd/2) + '" y="' + (Y(0) + 74) + '" text-anchor="middle">' + D.depth + '</text></g>';
+  s += '<text x="' + (px + pd/2) + '" y="' + (Y(0) + 98) + '" text-anchor="middle">profondeur, mur compris</text></g>';
+
+  // cote longueur d'alvéole (sous la 1re travée)
+  var c0 = g.x0 + D.upW, yl = Y(0) + 46;
+  s += '<g class="dim small"><line x1="' + c0 + '" y1="' + yl + '" x2="' + (c0 + D.bayL) + '" y2="' + yl + '"/><line x1="' + c0 + '" y1="' + (yl-10) + '" x2="' + c0 + '" y2="' + (yl+10) + '"/><line x1="' + (c0+D.bayL) + '" y1="' + (yl-10) + '" x2="' + (c0+D.bayL) + '" y2="' + (yl+10) + '"/>'
+    + '<text x="' + (c0 + D.bayL/2) + '" y="' + (yl + 30) + '" text-anchor="middle">' + D.bayL + ' (longueur d’alvéole)</text></g>';
+
+  svg.innerHTML = s;
+  svg.classList.toggle('all', st.mode === 'all');
+  svg.classList.toggle('dimmed', st.mode === 'cell' && !!st.sel);
+  svg.classList.toggle('hl-off', !!st.hl);
+  if (st.anim && !reduce){
+    svg.classList.add('drop');
+    svg.getBoundingClientRect();
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ svg.classList.remove('drop'); }); });
+  }
+}
+function pallet(x, yb, h, t, w, side){
+  var base = 14, top = yb - h, lh = h - base, s = '';
+  // support (palette bois)
+  s += '<rect x="' + x + '" y="' + (yb - base) + '" width="' + w + '" height="' + base + '" style="fill:var(--wood)"/>';
+  var blocks = side ? [0, w/2 - 6, w - 12] : [0, w/2 - 6, w - 12];
+  blocks.forEach(function(bx){ s += '<rect x="' + (x + bx) + '" y="' + (yb - 9) + '" width="12" height="9" style="fill:var(--wood-d)"/>'; });
+  // charge (cartons)
+  s += '<rect class="load" x="' + (x + 2) + '" y="' + top + '" width="' + (w - 4) + '" height="' + (lh - 1) + '" rx="2" style="fill:color-mix(in srgb,var(' + TCOL[t] + ') 22%,#fff);stroke:var(' + TCOL[t] + ');stroke-width:1.6"/>';
+  var rows = Math.max(2, Math.round(lh/22));
+  for (var r = 1; r < rows; r++){ var yy = top + r*(lh - 1)/rows; s += '<line x1="' + (x + 2) + '" y1="' + yy + '" x2="' + (x + w - 2) + '" y2="' + yy + '" style="stroke:var(' + TCOL[t] + ');stroke-opacity:.45;stroke-width:1"/>'; }
+  var cols = side ? 3 : 2;
+  for (var c = 1; c < cols; c++){ var xx = x + 2 + c*(w - 4)/cols; s += '<line x1="' + xx + '" y1="' + top + '" x2="' + xx + '" y2="' + (yb - base) + '" style="stroke:var(' + TCOL[t] + ');stroke-opacity:.45;stroke-width:1"/>'; }
+  if (!side){
+    var cy = top + lh/2;
+    s += '<g class="badge"><rect x="' + (x + w/2 - 15) + '" y="' + (cy - 15) + '" width="30" height="30" rx="5" style="fill:var(' + TCOL[t] + ')"/><text x="' + (x + w/2) + '" y="' + (cy + 1) + '">' + t + '</text></g>';
+  }
+  return s;
+}
+function legendHTML(D){
+  var s = '<span><i class="bx"></i>Volume brut (alvéole)</span>';
+  Object.keys(D.types).forEach(function(t){
+    s += '<span><i style="background:var(' + TCOL[t] + ')"></i>Type ' + t + ' : hauteur de charge ' + D.types[t] + ' cm</span>';
+  });
+  return s + '<span>Cotes en cm · support de charge compris</span>';
+}
+
+/* ---------- vue principale ---------- */
+var D = BASE, G = geo(D);
+var st = {mode:'cell', sel:[1,0], hl:null, anim:true};
+var svg = $('rack');
+$('legend').innerHTML = legendHTML(D);
+
+function bars(b, n){
+  var pct = b ? n/b*100 : 0;
+  return '<div class="bars"><div class="barrow">Volume brut : ' + F(b) + ' m³<div class="track"><div class="b" style="width:100%"></div></div></div>' +
+    '<div class="barrow">Volume net : ' + F(n) + ' m³ → ' + F(pct, 2) + ' %<div class="track"><div class="n" data-w="' + pct.toFixed(2) + '" style="width:0"></div></div></div></div>';
+}
+function grow(){
+  var f = $('panel').querySelectorAll('[data-w]');
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ Array.prototype.forEach.call(f, function(e){ e.style.width = e.getAttribute('data-w') + '%'; }); }); });
+}
+function panelCell(){
+  var k = st.sel[0], j = st.sel[1], c = cellCalc(D, k, j), pct = c.brut ? c.net/c.brut*100 : 0;
+  return '<div class="kicker">Alvéole par alvéole</div><h2>' + cellName(k, j) + '</h2>' +
+    '<div class="cols">' +
+    '<div class="formula brut"><div class="f-sym">Volume brut de l’alvéole = longueur × profondeur × hauteur libre</div>' +
+      '<div class="f-num">' + M(D.bayL) + ' m × ' + M(D.depth) + ' m × ' + M(D.levels[k]) + ' m</div>' +
+      '<div class="f-res">= ' + F(c.brut) + ' <small>m³</small></div><div class="memo"><span>Mémo</span>VBS = L × P × hauteur libre</div></div>' +
+    '<div class="formula net"><div class="f-sym">Volume net de l’alvéole = Σ (palettes × 1 m² × hauteur de charge)</div>' +
+      '<div class="f-num">' + netExpr(D, c.counts) + '</div>' +
+      '<div class="f-res">= ' + F(c.net) + ' <small>m³</small></div><div class="memo"><span>Mémo</span>VNS = Σ (palettes × 1 × h)</div></div>' +
+    '</div>' +
+    '<div class="formula rate"><div class="f-sym">Taux d’utilisation = volume net ÷ volume brut × 100</div>' +
+      '<div class="f-num">' + F(c.net) + ' ÷ ' + F(c.brut) + ' × 100</div><div class="f-res">= ' + F(pct, 2) + ' <small>%</small></div></div>' +
+    bars(c.brut, c.net) +
+    '<p class="keep"><b>À retenir</b>Volume brut : hauteur libre entre les lisses. Volume net : hauteur de charge de chaque palette, support compris.</p>';
+}
+function panelAll(){
+  var T = totals(D), g = G, pct = T.net/T.brut*100, rows = '', trows = '';
+  for (var k = 0; k < g.nl; k++){
+    rows += '<tr data-hl="level:' + k + '"><td>Niveau ' + (k+1) + '</td><td>' + g.nb + ' × ' + M(D.bayL) + ' × ' + M(D.depth) + ' × ' + M(D.levels[k]) + '</td><td>' + F(T.byLevel[k]) + '</td></tr>';
+  }
+  Object.keys(T.byType).sort().forEach(function(t){
+    trows += '<tr data-hl="type:' + t + '"><td><span class="sw" style="background:var(' + TCOL[t] + ')"></span>Type ' + t + ' (' + M(D.types[t]) + ' m)</td><td>' + T.byType[t] + ' × 1 × ' + M(D.types[t]) + '</td><td>' + F(T.byType[t]*D.types[t]/100) + '</td></tr>';
+  });
+  return '<div class="kicker">Rayonnage complet · ' + (g.nb*g.nl) + ' alvéoles</div><h2>Tout le rayonnage</h2>' +
+    '<div class="cols">' +
+    '<div class="formula brut"><div class="f-sym">Volume brut de stockage = somme des alvéoles</div>' +
+      '<table class="t"><thead><tr><th>Niveau</th><th>Calcul</th><th>m³</th></tr></thead><tbody>' + rows +
+      '<tr class="tot"><td>Total</td><td></td><td>' + F(T.brut) + '</td></tr></tbody></table>' +
+      '<div class="f-res">= ' + F(T.brut) + ' <small>m³</small></div></div>' +
+    '<div class="formula net"><div class="f-sym">Volume net de stockage = Σ (palettes × 1 m² × hauteur de charge)</div>' +
+      '<table class="t"><thead><tr><th>Palettes</th><th>Calcul</th><th>m³</th></tr></thead><tbody>' + trows +
+      '<tr class="tot"><td>Total</td><td></td><td>' + F(T.net) + '</td></tr></tbody></table>' +
+      '<div class="f-res">= ' + F(T.net) + ' <small>m³</small></div></div>' +
+    '</div>' +
+    '<div class="formula rate"><div class="f-sym">Taux d’utilisation du volume = volume net de stockage ÷ volume brut de stockage × 100</div>' +
+      '<div class="f-num">' + F(T.net) + ' ÷ ' + F(T.brut) + ' × 100</div><div class="f-res">= ' + F(pct, 2) + ' <small>%</small></div></div>' +
+    bars(T.brut, T.net) +
+    '<div class="formula"><div class="f-sym">Volume total du rayonnage (espace occupé) = largeur de l’espace × profondeur × hauteur du rayonnage</div>' +
+      '<div class="f-num">' + M(D.space) + ' m × ' + M(D.depth) + ' m × ' + M(T.H) + ' m</div><div class="f-res">= ' + F(T.espace) + ' <small>m³</small></div></div>' +
+    '<p class="note">Survole une ligne d’un tableau pour voir le niveau ou les palettes concernés sur le dessin. L’espace occupé est plus grand que la somme des alvéoles : il compte aussi les montants, les lisses et les dégagements.</p>';
+}
+function update(anim){
+  st.anim = !!anim;
+  render(svg, D, st);
+  $('panel').innerHTML = st.mode === 'cell' ? panelCell() : panelAll();
+  grow();
+  $('mCell').setAttribute('aria-pressed', st.mode === 'cell' ? 'true' : 'false');
+  $('mAll').setAttribute('aria-pressed', st.mode === 'all' ? 'true' : 'false');
+  $('cellnav').style.visibility = st.mode === 'cell' ? 'visible' : 'hidden';
+  if (st.sel) $('cName').textContent = cellName(st.sel[0], st.sel[1]);
+}
+function step(dir){
+  var idx = st.sel[0]*G.nb + st.sel[1], n = G.nb*G.nl;
+  idx = (idx + dir + n) % n;
+  st.sel = [Math.floor(idx/G.nb), idx % G.nb];
+  update(false);
+}
+$('mCell').addEventListener('click', function(){ st.mode = 'cell'; st.hl = null; if (!st.sel) st.sel = [0,0]; update(false); });
+$('mAll').addEventListener('click', function(){ st.mode = 'all'; st.hl = null; update(false); });
+$('cPrev').addEventListener('click', function(){ step(-1); });
+$('cNext').addEventListener('click', function(){ step(1); });
+$('replay').addEventListener('click', function(){ update(true); });
+svg.addEventListener('click', function(e){
+  var c = e.target.closest ? e.target.closest('[data-cell]') : null;
+  if (!c) return;
+  var p = c.getAttribute('data-cell').split(',');
+  st.mode = 'cell'; st.hl = null; st.sel = [+p[0], +p[1]];
+  update(false);
+});
+$('panel').addEventListener('mouseover', function(e){
+  var r = e.target.closest ? e.target.closest('[data-hl]') : null;
+  var v = r ? r.getAttribute('data-hl').split(':') : null;
+  var hl = v ? (v[0] === 'level' ? {level:+v[1]} : {type:+v[1]}) : null;
+  if (JSON.stringify(hl) === JSON.stringify(st.hl)) return;
+  st.hl = hl; st.anim = false; render(svg, D, st);
+});
+$('panel').addEventListener('mouseleave', function(){ if (st.hl){ st.hl = null; render(svg, D, st); } });
+document.addEventListener('keydown', function(e){
+  var t = e.target && e.target.tagName;
+  if (t === 'INPUT' || st.mode !== 'cell' || !$('rack').closest('.tabpane').classList.contains('on')) return;
+  if (e.key === 'ArrowRight') step(1);
+  if (e.key === 'ArrowLeft') step(-1);
+});
+
+/* ---------- onglets ---------- */
+var tabBtns = document.querySelectorAll('.tabs button'), panes = document.querySelectorAll('.tabpane');
+Array.prototype.forEach.call(tabBtns, function(b){
+  b.addEventListener('click', function(){
+    var name = b.getAttribute('data-go');
+    Array.prototype.forEach.call(panes, function(p){ p.classList.toggle('on', p.getAttribute('data-tab') === name); });
+    Array.prototype.forEach.call(tabBtns, function(x){ x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+    if (name === 'exo') renderEx(true);
+  });
+});
+
+update(true);
+
+/* ---------- exercice ---------- */
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+var EX = null;
+function newEx(){
+  var t1 = pick([60,70,80]), t2 = pick([90,100,110,120]), t3 = pick([140,150,160,170]);
+  var levels = [pick([100,110,120]), pick([150,170,180,190]), pick([120,130,140]), pick([180,190,200])];
+  var bayL = pick([260,270,280]), depth = pick([110,120,130]);
+  var types = {1:t1, 2:t2, 3:t3};
+  var cells = levels.map(function(h){
+    var row = [];
+    for (var j = 0; j < 4; j++){
+      var slot = [];
+      for (var p = 0; p < 3; p++){
+        var ok = [1,2,3].filter(function(t){ return types[t] <= h - 10; });
+        slot.push(Math.random() < 0.1 ? 0 : pick(ok));
+      }
+      row.push(slot);
+    }
+    return row;
+  });
+  var space = 4*bayL + 5*10 + pick([40,60,70,80]);
+  var Dx = {space:space, depth:depth, bayL:bayL, upW:10, beamH:15, levels:levels, types:types, cells:cells};
+  var q = [Math.floor(Math.random()*4), Math.floor(Math.random()*4)];
+  var c = cellCalc(Dx, q[0], q[1]), T = totals(Dx);
+  EX = {D:Dx, q:q, c:c, T:T, ans:[c.brut, c.net, T.brut, T.net, T.net/T.brut*100]};
+  $('scen').innerHTML = '<strong>Ton rayonnage</strong> (dessin ci-dessus)<ul>' +
+    '<li>Longueur d’une alvéole : ' + bayL + ' cm, profondeur (mur compris) : ' + depth + ' cm</li>' +
+    '<li>Hauteurs libres de bas en haut : ' + levels.join(' / ') + ' cm</li>' +
+    '<li>Hauteurs de charge : type 1 = ' + t1 + ' cm, type 2 = ' + t2 + ' cm, type 3 = ' + t3 + ' cm</li></ul>' +
+    '<div style="margin-top:4px;font-size:13px;color:var(--muted)">Alvéole demandée : <b>' + cellName(q[0], q[1]) + '</b> (encadrée en bleu). Arrondis à 3 décimales, le taux à 2.</div>';
+  $('l1').textContent = 'Volume brut de l’alvéole ' + 'N' + (q[0]+1) + '·T' + (q[1]+1) + ' (m³)';
+  $('l2').textContent = 'Volume net de l’alvéole ' + 'N' + (q[0]+1) + '·T' + (q[1]+1) + ' (m³)';
+  for (var i = 1; i <= 5; i++){ $('e'+i).value = ''; $('e'+i).className = ''; $('k'+i).textContent = ''; }
+  $('score').textContent = ''; $('corr').hidden = true; $('corr').innerHTML = '';
+  $('legendEx').innerHTML = legendHTML(Dx);
+  renderEx(true);
+}
+function renderEx(anim){
+  if (!EX) return;
+  render($('rackEx'), EX.D, {mode:'cell', sel:EX.q, hl:null, anim:anim});
+}
+function parse(v){ v = String(v).replace(/[\s '’%]/g, '').replace(',', '.'); return v === '' ? NaN : Number(v); }
+$('exform').addEventListener('submit', function(e){
+  e.preventDefault();
+  var ok = 0;
+  for (var i = 1; i <= 5; i++){
+    var inp = $('e'+i), v = parse(inp.value), a = EX.ans[i-1], m = $('k'+i);
+    if (isNaN(v)){ inp.className = ''; m.textContent = ''; continue; }
+    var tol = i === 5 ? 0.1 : Math.max(0.006, Math.abs(a)*0.002);
+    var good = Math.abs(v - a) <= tol;
+    inp.className = good ? 'ok' : 'ko'; m.textContent = good ? '✓' : '✗'; m.style.color = good ? '#2f9e5a' : '#d0453f';
+    if (good) ok++;
+  }
+  $('score').textContent = ok + ' / 5 juste' + (ok > 1 ? 's' : '') + (ok === 5 ? '. Bravo, tout est correct !' : '. Corrige les cases rouges ou regarde la correction.');
+});
+$('showc').addEventListener('click', function(){
+  var x = EX, D2 = x.D, k = x.q[0], c = x.c, T = x.T, rows = '', trows = [];
+  for (var l = 0; l < D2.levels.length; l++) rows += '<br>niveau ' + (l+1) + ' : 4 × ' + M(D2.bayL) + ' × ' + M(D2.depth) + ' × ' + M(D2.levels[l]) + ' = ' + F(T.byLevel[l]) + ' m³';
+  Object.keys(T.byType).sort().forEach(function(t){ trows.push(T.byType[t] + ' × 1 × ' + M(D2.types[t])); });
+  $('corr').innerHTML =
+    '<div><b>Volume brut de l’alvéole</b> = ' + M(D2.bayL) + ' × ' + M(D2.depth) + ' × ' + M(D2.levels[k]) + ' = ' + F(c.brut) + ' m³</div>' +
+    '<div><b>Volume net de l’alvéole</b> = ' + netExpr(D2, c.counts) + ' = ' + F(c.net) + ' m³</div>' +
+    '<div><b>Volume brut de stockage du rayonnage</b>' + rows + '<br>total = ' + F(T.brut) + ' m³</div>' +
+    '<div><b>Volume net de stockage du rayonnage</b> = ' + trows.join(' + ') + ' = ' + F(T.net) + ' m³</div>' +
+    '<div><b>Taux d’utilisation du volume</b> = ' + F(T.net) + ' ÷ ' + F(T.brut) + ' × 100 = ' + F(T.net/T.brut*100, 2) + ' %</div>';
+  $('corr').hidden = false;
+});
+$('newex').addEventListener('click', newEx);
+newEx();
+})();
+</script>
+</body>
+</html>

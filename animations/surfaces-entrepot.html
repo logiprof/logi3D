@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Surfaces d'un entrepôt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>html,body{margin:0;padding:0;background:#edf0f4}</style>
+</head>
+<body>
+<div id="ssv-surfaces-volumes" class="alignfull" style="display:block!important;position:relative!important;box-sizing:border-box!important;width:100vw;max-width:none!important;margin-right:0!important;padding:0!important;float:none!important;"></div>
+<script>
+(function(){
+var TPL = `<style>
+:host{all:initial;display:block}
+.ssv{
+  /* Plan : sol d'entrepôt gris-bleu, marquage jaune sécurité, bleu = brut, orange = net.
+     Mise en page : scène isométrique + panneau de formules côte à côte, fiche et exercice dessous. */
+  --bg:#edf0f4; --surface:#ffffff; --ink:#2f3439; --muted:#566273; --line:#cfd6df;
+  --accent:#437a45; --accent-ink:#2f6b33; --brand:#444a50;
+  --brut:#2f6fdb; --net:#e2600c;
+  --brut-soft:#b7cdf3; --net-soft:#f6be91;
+  --aisle:#dde3ea; --merch:#f2c79d; --removed:#e3e6ea; --hatch:#b4bcc6;
+  --annex1:#aebbd8; --annex2:#b5d4c2; --annex3:#d9c6a8; --annex4:#c8b7d8; --emb:#d4cfc4;
+  --pillar:#8c96a4; --pillar-x:#d06a6a;
+  --carton:#c99a60; --p150:#c4470f; --p120:#f0a20a; --p100:#13968a; --beam:#ef7a1e; --steel:#2e5ea6;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"Barlow","Segoe UI",system-ui,sans-serif;
+  color-scheme:light;text-align:left;letter-spacing:normal;text-transform:none;word-spacing:normal;
+}
+.ssv,.ssv *{box-sizing:border-box}
+.ssv{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{margin:0 auto;padding:20px 18px 48px;display:grid;gap:22px}
+header{display:grid;gap:4px}
+header .tag{font-family:var(--display);letter-spacing:.08em;text-transform:uppercase;font-size:14px;color:var(--accent-ink);display:flex;align-items:center;gap:8px}
+header .tag::before{content:"";width:22px;height:6px;background:linear-gradient(90deg,var(--brand) 0 50%,var(--accent) 50% 100%);border-radius:2px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,44px);line-height:1.02;margin:0;text-wrap:balance}
+header p{margin:0;color:var(--muted);max-width:68ch}
+/* Stepper */
+.steps{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.steps button{flex:0 0 auto;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 14px var(--body);padding:7px 12px 7px 8px;border-radius:999px;cursor:pointer}
+.steps button b{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--bg);font-family:var(--display);font-size:14px}
+.steps button[aria-current="step"]{border-color:var(--ink);background:var(--ink);color:var(--surface)}
+.steps button[aria-current="step"] b{background:var(--accent);color:#16202b}
+.steps button.done b{background:var(--accent);color:#16202b}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.app{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:18px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.stage{padding:10px 10px 12px;display:grid;gap:8px}
+.stage svg{width:100%;height:auto;display:block;touch-action:manipulation}
+.caption{font-size:14px;color:var(--muted);min-height:2.6em;padding:0 6px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.caption strong{color:var(--ink)}
+.mem{display:inline-flex;gap:4px}
+.mem span{font-size:12px;font-weight:600;padding:1px 7px;border-radius:999px;border:1px solid var(--line)}
+.mem .yes{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.mem .no{text-decoration:line-through;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding:0 6px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:6px;border:1px solid rgba(0,0,0,.15)}
+.legend i.hz{background:repeating-linear-gradient(45deg,var(--removed) 0 3px,var(--hatch) 3px 5px)}
+/* Panel */
+.panel{padding:20px 20px 18px;display:grid;gap:12px;position:sticky;top:12px}
+.kicker{font-family:var(--display);text-transform:uppercase;letter-spacing:.08em;font-size:14px;color:var(--muted)}
+.kicker b{color:var(--ink)}
+.panel h2{font-family:var(--display);font-size:30px;line-height:1.05;margin:0;text-wrap:balance}
+.panel p{margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;font-weight:600;padding:3px 9px;border-radius:6px;background:var(--removed);border:1px dashed var(--hatch);font-variant-numeric:tabular-nums}
+.chip.minus::before{content:"− "}
+.formula{border-radius:10px;padding:12px 14px;background:var(--bg);border-left:6px solid var(--ink);display:grid;gap:6px;font-variant-numeric:tabular-nums}
+.formula.brut{border-left-color:var(--brut)}
+.formula.net{border-left-color:var(--net)}
+.f-sym{font-weight:700;font-size:15px}
+.f-num{font-size:15px;color:var(--muted)}
+.f-res{font-family:var(--display);font-weight:700;font-size:40px;line-height:1}
+.f-res small{font-size:24px}
+.formula.brut .f-res{color:var(--brut)}
+.formula.net .f-res{color:var(--net)}
+.extra{font-size:14px;color:var(--muted);display:grid;gap:4px;font-variant-numeric:tabular-nums}
+.extra table{border-collapse:collapse;width:100%;font-size:14px}
+.extra td,.extra th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right;color:var(--ink)}
+.extra th{font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.extra td:first-child,.extra th:first-child{text-align:left}
+.extra .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.keep{font-size:14px;padding:9px 12px;border-radius:8px;background:color-mix(in srgb,var(--accent) 22%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 60%,var(--surface))}
+.keep b{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;margin-right:6px}
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:600 15px var(--body);border-radius:9px;padding:9px 14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.ghost{margin-left:auto}
+/* Récap */
+.flow{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;font-size:13px;font-variant-numeric:tabular-nums}
+.flow .col-h{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.node{border-radius:8px;padding:7px 9px;border:1px solid var(--line);background:var(--surface)}
+.node b{display:block;font-size:17px;font-family:var(--display)}
+.node.brut{border-color:var(--brut)} .node.brut b{color:var(--brut)}
+.node.net{border-color:var(--net)} .node.net b{color:var(--net)}
+.arrow{font-size:12px;color:var(--muted);text-align:center}
+/* Fiche + exercice */
+.lower{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.sheet,.exo{padding:20px;display:grid;gap:12px}
+.sheet h2,.exo h2{font-family:var(--display);font-size:28px;margin:0}
+.sheet table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.sheet th,.sheet td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.sheet th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.sheet td.u{white-space:nowrap;font-weight:700}
+.sheet tr.brut td:first-child{border-left:4px solid var(--brut);padding-left:8px}
+.sheet tr.net td:first-child{border-left:4px solid var(--net);padding-left:8px}
+.sheet tr.glob td:first-child{border-left:4px solid var(--ink);padding-left:8px}
+.scen{background:var(--bg);border-radius:10px;padding:12px 14px;font-size:15px}
+.scen ul{margin:6px 0 0;padding-left:18px}
+.q{display:grid;grid-template-columns:1fr 130px 22px;gap:8px;align-items:center}
+.q label{font-weight:600;font-size:15px}
+.q input{width:100%;font:600 16px var(--body);padding:7px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+.q input.ok{border-color:#2f9e5a;background:color-mix(in srgb,#2f9e5a 12%,var(--surface))}
+.q input.ko{border-color:#d0453f;background:color-mix(in srgb,#d0453f 12%,var(--surface))}
+.q .mark{font-weight:700}
+.score{font-weight:600;min-height:1.5em}
+.corr{font-size:14px;background:var(--bg);border-radius:10px;padding:12px 14px;display:grid;gap:5px;font-variant-numeric:tabular-nums}
+.corr[hidden]{display:none}
+.corr b{font-weight:700}
+/* SVG */
+.tile{transition:fill .6s ease;stroke:var(--surface);stroke-width:.6}
+.tile.n{fill:var(--c)} .tile.h{fill:var(--brut-soft)} .tile.s{fill:var(--net-soft)} .tile.x{fill:var(--removed)}
+.tile.merch.n,.tile.merch.s,.tile.merch.h{stroke:var(--accent);stroke-width:1.2}
+.hat{fill:url(#hatch);opacity:0;transition:opacity .6s;pointer-events:none}
+.hat.on{opacity:1}
+.outline{fill:none;stroke:var(--ink);stroke-width:1.2;transition:stroke .5s,stroke-width .5s;pointer-events:none}
+.outline.hl{stroke:var(--accent);stroke-width:3.5}
+.tile:hover{filter:brightness(1.05)}
+.tile.sel{stroke:var(--ink);stroke-width:2}
+.lbl{font:600 9px var(--body);fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--surface);stroke-width:2.5px;stroke-linejoin:round;pointer-events:none;transition:fill .5s}
+.lbl.sub{font-weight:700;font-size:8.5px}
+.lbl.off{fill:var(--muted)}
+.ft{fill:var(--c)} .fr{fill:color-mix(in srgb,var(--c) 80%,#000)} .fl{fill:color-mix(in srgb,var(--c) 63%,#000)}
+.bx polygon{stroke:color-mix(in srgb,var(--c) 50%,#000);stroke-width:.35;stroke-linejoin:round}
+#objs,#vol,#dims{pointer-events:none}
+.vb{fill:var(--brut);fill-opacity:.07;stroke:var(--brut);stroke-opacity:.55;stroke-dasharray:3 3;stroke-width:.8}
+.vf{fill:var(--brut);fill-opacity:.14;stroke:var(--brut);stroke-width:1}
+.vt{fill:var(--brut);fill-opacity:.22;stroke:var(--brut);stroke-width:1.3}
+.vw{fill:var(--brut);fill-opacity:.025;stroke:var(--brut);stroke-width:.9;stroke-dasharray:4 3;stroke-opacity:.8}
+.dim line{stroke:var(--ink);stroke-width:1}
+.dim.dash line.d{stroke-dasharray:3 3}
+.dim text{font:700 11px var(--body);fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.dim.brut line{stroke:var(--brut)} .dim.brut text{fill:var(--brut)}
+.dim.net line{stroke:var(--net)} .dim.net text{fill:var(--net)}
+.ghost{fill:none;stroke:var(--net);stroke-width:1;stroke-dasharray:3 3}
+@media (max-width:900px){
+  .app,.lower{grid-template-columns:1fr}
+  .panel{position:static}
+}
+@media (max-width:420px){
+  .wrap{padding:14px 16px 40px}
+  .q{grid-template-columns:1fr 110px 18px}
+  .panel{padding:16px}
+  .f-res{font-size:34px}
+}
+@media (prefers-reduced-motion: reduce){
+  .tile,.hat,.outline,.lbl{transition:none}
+}
+.stage svg{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.stage svg.dragging{cursor:grabbing}
+.viewbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:0 6px;font-size:13px;color:var(--muted)}
+.viewbar .btn{font-size:13px;padding:5px 10px;border-radius:7px}
+.viewbar .hint{margin-right:auto;display:flex;align-items:center;gap:6px}
+.memo{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+.memo span{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:1px 6px;border-radius:4px;border:1px solid var(--line)}
+.bars{display:grid;gap:8px}
+.bar{display:grid;gap:3px;font-size:13px;color:var(--ink)}
+.track{height:14px;border-radius:4px;background:var(--bg);overflow:hidden;border:1px solid var(--line)}
+.track div{height:100%;border-radius:3px;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.track .b{background:var(--brut)} .track .n{background:var(--net)}
+.formula.rate{border-left-color:var(--accent)}
+.formula.rate .f-res{color:var(--accent-ink)}
+.left{display:grid;gap:18px;align-items:start}
+.lex table{width:100%;border-collapse:collapse;font-size:14px}
+.lex td,.lex th{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.lex th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.lex td.ab{font-family:var(--display);font-size:20px;font-weight:700;white-space:nowrap}
+.lex td.ab em{font-style:normal;color:var(--accent-ink)}
+.warn{border-radius:10px;padding:12px 14px;background:color-mix(in srgb,#d0453f 10%,var(--surface));border:1px solid color-mix(in srgb,#d0453f 45%,var(--surface));font-size:14px;display:grid;gap:6px}
+.warn strong{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:15px;color:#c0392f}
+.warn .ex{font-variant-numeric:tabular-nums;background:var(--surface);border-radius:6px;padding:8px 10px;border:1px dashed var(--line)}
+.sheet td .mm{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.sheet tr.rate td:first-child{border-left:4px solid var(--accent);padding-left:8px}
+/* ---- Mise en page WordPress : animation 1/3 à gauche, explications 2/3 à droite ---- */
+.wrap{max-width:none;padding:28px clamp(16px,3vw,44px) 48px;gap:22px}
+.app{grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:20px}
+.stage{position:sticky;top:20px;align-self:start}
+.panel{position:static;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px 30px;align-items:start;padding:24px}
+.pa,.pb{display:grid;gap:12px;align-content:start;min-width:0}
+.panel .nav{grid-column:1/-1}
+.lex{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px 30px;align-items:start}
+.lex h2{grid-column:1/-1}
+.lower{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.ssv table{margin:0;border:0;background:none}
+.ssv h1,.ssv h2{color:var(--ink);padding:0;border:0;background:none}
+@media (max-width:1250px){ .panel{grid-template-columns:1fr} }
+@media (max-width:1000px){
+  .app,.lex,.lower{grid-template-columns:1fr}
+  .stage{position:static}
+}
+
+/* Agrandir / plein écran */
+.app.large{grid-template-columns:1fr}
+.app.large .stage{position:static}
+.app.large .stage svg{max-height:760px}
+.fsnav{display:none}
+.stage.fs{background:var(--surface);border-radius:0;border:0;padding:14px 18px;display:flex;flex-direction:column;gap:8px;width:100%;height:100%;overflow:hidden}
+.stage.fs svg{flex:1 1 auto;min-height:0;height:100%;max-height:none;width:100%}
+.stage.fs .fsnav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:0 6px}
+.fsnav .lab{font-weight:600;margin-right:auto}
+.viewbar .btn.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+
+/* ===== Version compacte + couleurs LogiProf ===== */
+.ssv{font-size:15px}
+.wrap{padding:16px clamp(12px,2.2vw,24px) 18px;gap:12px}
+.wrap > header{gap:2px;padding-right:min(170px,24%)}
+.wrap > header h1{font-size:clamp(21px,2.6vw,28px)}
+.wrap > header p{font-size:14px;line-height:1.4}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;width:max-content;max-width:100%}
+.tabs button{font:600 14px var(--body);border:0;background:transparent;color:var(--ink);padding:7px 14px;border-radius:7px;cursor:pointer}
+.tabs button:hover{background:var(--bg)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:#fff}
+.tabpane{display:none}
+.tabpane.on{display:grid;gap:10px}
+.lower{display:block}
+.steps{gap:5px}
+.steps button{padding:4px 8px 4px 4px;font-size:13px;gap:6px}
+.steps button b{width:20px;height:20px;font-size:13px}
+.steps button:not([aria-current="step"]) .lbl{display:none}
+.steps button:not([aria-current="step"]){padding-right:4px}
+.steps button[aria-current="step"]{background:var(--brand);border-color:var(--brand)}
+.steps button[aria-current="step"] b,.steps button.done b{background:var(--accent);color:#fff}
+.app{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:12px}
+.stage{position:static;padding:8px 8px 10px;gap:6px}
+.stage svg{max-height:380px}
+.app.large .stage svg{max-height:620px}
+.viewbar{gap:4px}
+.viewbar .btn{font-size:12px;padding:4px 8px;border-radius:6px}
+.legend{font-size:12px;gap:4px 10px}
+.caption{font-size:12px;min-height:0}
+.panel{padding:14px 16px;gap:10px;grid-template-columns:1fr}
+.pa,.pb{gap:9px}
+.panel h2{font-size:22px}
+.panel p{font-size:14.5px;line-height:1.45}
+.formula{padding:9px 12px}
+.f-sym,.f-num{font-size:13.5px}
+.f-res{font-size:30px}
+.f-res small{font-size:18px}
+.extra{font-size:13px}
+.keep{font-size:13px;padding:7px 10px;background:color-mix(in srgb,var(--accent) 12%,var(--surface));border-color:color-mix(in srgb,var(--accent) 45%,var(--surface))}
+.btn{font-size:14px;padding:7px 12px}
+.btn.primary{background:var(--brand);border-color:var(--brand)}
+.sheet,.exo{padding:16px}
+.sheet h2,.exo h2{font-size:22px}
+.lex{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}
+.lex td.ab em{color:var(--accent)}
+.formula.rate{border-left-color:var(--accent)}
+.formula.rate .f-res{color:var(--accent-ink)}
+.q{grid-template-columns:1fr 130px 22px}
+@media (max-width:720px){
+  .app,.lex{grid-template-columns:1fr}
+  .wrap > header p{display:none}
+}
+</style><div class="ssv wrap">
+  <header>
+    <div class="tag">Logistique · Gestion de l'entrepôt</div>
+    <h1>Les surfaces d'un entrepôt : de la surface globale à la surface nette</h1>
+    <p>Avance étape par étape. Glisse sur l'entrepôt pour le faire tourner, touche une zone pour voir sa surface.</p>
+  </header>
+  <nav class="tabs" role="tablist" aria-label="Sections"><button type="button" role="tab" data-go="anim" aria-selected="true">Animation</button><button type="button" role="tab" data-go="lex" aria-selected="false">Lexique</button><button type="button" role="tab" data-go="fiche" aria-selected="false">Fiche formules</button><button type="button" role="tab" data-go="exo" aria-selected="false">À toi de jouer</button></nav>
+  <div class="tabpane on" data-tab="anim">
+  <nav class="steps" id="steps" aria-label="Étapes"></nav>
+  <div class="app">
+    <section class="card stage" aria-label="Animation de l'entrepôt">
+      <div class="viewbar">
+        <span class="hint">↻ Glisse pour tourner</span>
+        <button class="btn" type="button" id="v3d" title="Vue 3D">3D</button>
+        <button class="btn" type="button" id="vtop" title="Vue de dessus">Dessus</button>
+        <button class="btn" type="button" id="vfront" title="Vue de face">Face</button>
+        <button class="btn" type="button" id="vbig" aria-pressed="false" title="Agrandir la vue 3D">⤢</button>
+        <button class="btn" type="button" id="vfs" title="Plein écran">⛶</button>
+      </div>
+      <svg id="svg" viewBox="0 0 700 470" role="img" aria-label="Entrepôt en 3D, orientable">
+        <defs>
+          <pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="5" height="5" style="fill:var(--removed)"></rect>
+            <line x1="0" y1="0" x2="0" y2="5" style="stroke:var(--hatch);stroke-width:2"></line>
+          </pattern>
+        </defs>
+        <g id="floor"></g>
+        <g id="labels"></g>
+        <g id="objs"></g>
+        <g id="vol"></g>
+        <g id="dims"></g>
+      </svg>
+      <div class="legend" id="legend"></div>
+      <div class="caption" id="caption" aria-live="polite">Touche une zone du plan pour voir sa surface et ce qu'elle compte.</div>
+      <div class="fsnav"><button class="btn" type="button" id="fsprev">← Précédent</button><span class="lab" id="fslab"></span><button class="btn primary" type="button" id="fsnext">Suivant →</button><button class="btn" type="button" id="fsexit">Quitter le plein écran</button></div>
+    </section>
+    <aside class="card panel" aria-live="polite">
+      <div class="pa">
+        <div class="kicker">Étape <b id="pn">1</b> / 5 · <span id="pk"></span></div>
+        <h2 id="pt"></h2>
+        <p id="px"></p>
+        <div class="chips" id="pc"></div>
+        <div class="formula" id="pf"></div>
+      </div>
+      <div class="pb">
+        <div class="extra" id="pe"></div>
+        <p class="keep" id="pr"></p>
+      </div>
+      <div class="nav">
+        <button class="btn" id="prev" type="button">← Précédent</button>
+        <button class="btn primary" id="next" type="button">Suivant →</button>
+        <button class="btn ghost" id="replay" type="button">↻ Rejouer</button>
+      </div>
+    </aside>
+  </div>
+  </div>
+  <section class="card sheet lex tabpane" data-tab="lex" aria-labelledby="lxh">
+    <h2 id="lxh">Lexique des abréviations</h2>
+    <table>
+      <thead><tr><th>Abréviation</th><th>Signification</th><th>Unité</th></tr></thead>
+      <tbody>
+        <tr><td class="ab"><em>S</em>BS</td><td><b>S</b>urface <b>B</b>rute de <b>S</b>tockage : allées de travail + zones occupées par la marchandise</td><td class="u">m²</td></tr>
+        <tr><td class="ab"><em>S</em>NS</td><td><b>S</b>urface <b>N</b>ette de <b>S</b>tockage : uniquement le sol occupé par la marchandise</td><td class="u">m²</td></tr>
+      </tbody>
+    </table>
+    <div class="warn">
+      <strong>⚠ Attention en évaluation</strong>
+      <p style="margin:0">Ces abréviations servent <b>uniquement à t'aider à retenir les formules</b>. Dans une évaluation, tu ne les écris jamais. Tu écris les noms complets et tu montres chaque étape du calcul : tu pars de la surface brute de stockage, tu enlèves les annexes que tu as calculées, et ainsi de suite.</p>
+      <div class="ex">✗ SNS = SBS − allées = 240<br>✓ Surface nette de stockage = surface brute de stockage 760 m² − allées 520 m² = 240 m²</div>
+    </div>
+  </section>
+  <div class="lower">
+    <section class="card sheet tabpane" data-tab="fiche" aria-labelledby="sh">
+      <h2 id="sh">Fiche formules</h2>
+      <table>
+        <thead><tr><th>Grandeur</th><th>Formule</th><th>Unité</th></tr></thead>
+        <tbody>
+          <tr class="glob"><td>Surface globale</td><td>Toute la surface de l'entreprise : longueur × largeur du bâtiment</td><td class="u">m²</td></tr>
+          <tr class="brut"><td>Surface brute de stockage</td><td>Surface globale − bureaux, vestiaires, toilettes, escaliers, piliers, emballages vides…<span class="mm">Mémo : SBS = allées de travail + zones de marchandise</span></td><td class="u">m²</td></tr>
+          <tr class="net"><td>Surface nette de stockage</td><td>Surface brute de stockage − allées de circulation<span class="mm">Mémo : SNS = SBS − allées</span></td><td class="u">m²</td></tr>
+          <tr class="rate"><td>Taux d'occupation de la surface</td><td>Surface nette de stockage ÷ surface brute de stockage × 100<span class="mm">Mémo : SNS ÷ SBS × 100</span></td><td class="u">%</td></tr>
+        </tbody>
+      </table>
+      <p class="keep"><b>Rappel</b>Les allées sont comprises dans la surface brute de stockage, mais jamais dans la surface nette de stockage.</p>
+    </section>
+    <section class="card exo tabpane" data-tab="exo" aria-labelledby="exh">
+      <h2 id="exh">À toi de jouer</h2>
+      <div class="scen" id="scen"></div>
+      <form id="exform" style="display:grid;gap:8px" novalidate>
+        <div class="q"><label for="a1">Surface globale (m²)</label><input id="a1" inputmode="decimal" autocomplete="off"><span class="mark" id="m1"></span></div>
+        <div class="q"><label for="a2">Surface brute de stockage (m²)</label><input id="a2" inputmode="decimal" autocomplete="off"><span class="mark" id="m2"></span></div>
+        <div class="q"><label for="a3">Surface nette de stockage (m²)</label><input id="a3" inputmode="decimal" autocomplete="off"><span class="mark" id="m3"></span></div>
+        <div class="q"><label for="a4">Taux d'occupation de la surface (%)</label><input id="a4" inputmode="decimal" autocomplete="off"><span class="mark" id="m4"></span></div>
+        <div class="score" id="score"></div>
+        <div class="nav">
+          <button class="btn primary" type="submit">Vérifier</button>
+          <button class="btn" type="button" id="showc">Voir la correction</button>
+          <button class="btn" type="button" id="newex">Nouvel exercice</button>
+        </div>
+      </form>
+      <div class="corr" id="corr" hidden></div>
+    </section>
+  </div>
+</div>
+`;
+"use strict";
+var host = document.getElementById("ssv-surfaces-volumes");
+if (!host || host.shadowRoot) return;
+var root = host.attachShadow({mode:"open"});
+root.innerHTML = TPL;
+function $(id){ return root.getElementById(id); }
+/* pleine largeur sans toucher au reste de la page */
+function fit(){
+  if (document.fullscreenElement || document.webkitFullscreenElement) return;
+  var w = document.documentElement.clientWidth;
+  host.style.setProperty("width", w + "px", "important");
+  host.style.setProperty("margin-left", "0px", "important");
+  var left = host.getBoundingClientRect().left;
+  host.style.setProperty("margin-left", (-left) + "px", "important");
+}
+fit();
+window.addEventListener("resize", fit);
+window.addEventListener("load", fit);
+if (window.ResizeObserver && host.parentElement) new ResizeObserver(fit).observe(host.parentElement);
+var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* ---------- format ---------- */
+function F(n){
+  var neg = n < 0; n = Math.abs(n);
+  var s = (Math.round(n*100)/100).toFixed(2).split('.');
+  var i = s[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  var d = s[1].replace(/0+$/, '');
+  return (neg ? '−' : '') + i + (d ? ',' + d : '');
+}
+function H(n){ return n.toFixed(2).replace('.', ','); }
+function clamp(v){ return v < 0 ? 0 : v > 1 ? 1 : v; }
+function ease(t){ return 1 - Math.pow(1 - t, 3); }
+/* ---------- caméra orientable ---------- */
+var VW = 700, VH = 470, CX = 20, CY = 12.5, RAD = 23.6, OX = 345;
+var DEF = {th:45, ph:35.26};
+var view = {th:DEF.th, ph:DEF.ph};
+var S, OY, sT, cT, sP, cP;
+function setView(){
+  var t = view.th*Math.PI/180, p = view.ph*Math.PI/180;
+  sT = Math.sin(t); cT = Math.cos(t); sP = Math.sin(p); cP = Math.cos(p);
+  S = Math.min(12.25, 560/(2*RAD), (VH - 70)/(2*RAD*sP + 6*cP));
+  OY = VH/2 + 3*cP*S + 4;
+}
+function U(x, y){ return (x - CX)*cT - (y - CY)*sT; }
+function V(x, y){ return (x - CX)*sT + (y - CY)*cT; }
+function P(x, y, z){ return [OX + U(x,y)*S, OY + V(x,y)*sP*S - z*S*cP]; }
+function pts(a){ return a.map(function(p){ return p[0].toFixed(1)+','+p[1].toFixed(1); }).join(' '); }
+function rect(x, y, w, d, z){ z = z||0; return [P(x,y,z),P(x+w,y,z),P(x+w,y+d,z),P(x,y+d,z)]; }
+setView();
+/* ---------- plan ---------- */
+var tiles = [
+  {kind:'aisle', name:'Allées de travail', x:8,y:0,w:32,d:25, a:520, c:'--aisle', lx:22, ly:23.2, dims:'zone de stock 32 m × 25 m, sans marchandise, emballages ni piliers'},
+  {kind:'annex', name:'Bureaux', x:0,y:0,w:8,d:10, a:80, c:'--annex1'},
+  {kind:'annex', name:'Vestiaires', x:0,y:10,w:8,d:6, a:48, c:'--annex2'},
+  {kind:'annex', name:'Toilettes', x:0,y:16,w:8,d:4, a:32, c:'--annex3'},
+  {kind:'annex', name:'Escaliers', x:0,y:20,w:8,d:5, a:40, c:'--annex4'},
+  {kind:'emb', name:'Emballages vides', x:34,y:19,w:6,d:6, a:36, c:'--emb', short:'Emb. vides'},
+  {kind:'merch', name:'Stock en bloc', x:10,y:2,w:12,d:10, a:120, c:'--merch'},
+  {kind:'merch', name:'Rayonnage 1', x:24,y:2,w:15,d:2, a:30, c:'--merch'},
+  {kind:'merch', name:'Rayonnage 2', x:24,y:7,w:15,d:2, a:30, c:'--merch'},
+  {kind:'merch', name:'Rayonnage 3', x:24,y:12,w:15,d:2, a:30, c:'--merch'},
+  {kind:'merch', name:'Rayonnage 4', x:24,y:17,w:15,d:2, a:30, c:'--merch'}
+];
+var pillars = [[16,16],[16,22],[22.5,15],[29,22]];
+pillars.forEach(function(p, i){
+  tiles.push({kind:'pillar', name:'Pilier '+(i+1), x:p[0], y:p[1], w:1, d:1, a:1, c:'--pillar', nolabel:true});
+});
+var MEM = { annex:[1,0,0], emb:[1,0,0], pillar:[1,0,0], aisle:[1,1,0], merch:[1,1,1] };
+/* étapes : 0 globale, 1 brute, 2 nette, 3 taux surface, 4 vol. brut, 5 bloc, 6 rayonnages, 7 vol. net + taux, 8 récap */
+var STATE = {
+  annex: ['n','x','x','x','n'],
+  emb:   ['n','x','x','x','n'],
+  pillar:['n','x','x','x','n'],
+  aisle: ['n','h','x','h','n'],
+  merch: ['n','h','s','s','s']
+};
+var NS = 'http://www.w3.org/2000/svg';
+var svg = $('svg');
+var svgFloor = $('floor'), svgLabels = $('labels');
+function el(tag, attrs, parent){
+  var e = document.createElementNS(NS, tag);
+  for (var k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+tiles.forEach(function(t, i){
+  t.el = el('polygon', {'class':'tile n '+t.kind, style:'--c:var('+t.c+')', 'data-i':i}, svgFloor);
+  t.hat = el('polygon', {'class':'hat'}, svgFloor);
+  if (!t.nolabel){
+    t.lx0 = t.lx != null ? t.lx : t.x + t.w/2; t.ly0 = t.ly != null ? t.ly : t.y + t.d/2;
+    t.l1 = el('text', {'class':'lbl'}, svgLabels);
+    if (t.kind === 'merch' && t.d < 3){ t.l1.textContent = t.name.replace('Rayonnage','Rayon.') + ' · ' + t.a + ' m²'; t.one = true; }
+    else { t.l1.textContent = t.short || t.name; t.l2 = el('text', {'class':'lbl sub'}, svgLabels); }
+  }
+});
+var outline = el('polygon', {'class':'outline'}, svgFloor);
+function floorGeom(){
+  tiles.forEach(function(t){
+    var p = pts(rect(t.x, t.y, t.w, t.d));
+    t.el.setAttribute('points', p); t.hat.setAttribute('points', p);
+    if (t.l1){
+      var c = P(t.lx0, t.ly0, 0), dy = t.one ? 3 : -2;
+      t.l1.setAttribute('x', c[0].toFixed(1)); t.l1.setAttribute('y', (c[1]+dy).toFixed(1));
+      if (t.l2){ t.l2.setAttribute('x', c[0].toFixed(1)); t.l2.setAttribute('y', (c[1]+dy+10).toFixed(1)); }
+    }
+  });
+  outline.setAttribute('points', pts(rect(0,0,40,25)));
+}
+/* ---------- objets 3D ---------- */
+function boxSvg(b){
+  var x0=b.x, x1=b.x+b.w, y0=b.y, y1=b.y+b.d, z0=b.z, z1=b.z+b.h;
+  var xf = sT > 0 ? x1 : x0, yf = cT > 0 ? y1 : y0;
+  var top=[P(x0,y0,z1),P(x1,y0,z1),P(x1,y1,z1),P(x0,y1,z1)];
+  var fx=[P(xf,y0,z0),P(xf,y1,z0),P(xf,y1,z1),P(xf,y0,z1)];
+  var fy=[P(x0,yf,z0),P(x1,yf,z0),P(x1,yf,z1),P(x0,yf,z1)];
+  return '<g class="bx" style="--c:var('+b.c+')"'+(b.o<1?' opacity="'+b.o.toFixed(2)+'"':'')+'>'+
+    '<polygon class="fl" points="'+pts(fy)+'"/><polygon class="fr" points="'+pts(fx)+'"/><polygon class="ft" points="'+pts(top)+'"/></g>';
+}
+var rows = [2,7,12,17];
+var levels = [{z:0,h:1.5,c:'--p150'},{z:1.7,h:1.2,c:'--p120'},{z:3.1,h:1.0,c:'--p100'}];
+var BLOC_LAYER = 1.6, BLOC_N = 3;
+var cur = {vol:0, bloc:0, rack:0, blocOp:1};
+var step = 0;
+function drawObjs(){
+  var items = [];
+  var pc = step === 1 ? '--pillar-x' : '--pillar';
+  pillars.forEach(function(p){ items.push({x:p[0],y:p[1],z:0,w:1,d:1,h:6,c:pc,o:1}); });
+  if (cur.bloc > 0){
+    for (var gx = 10; gx < 22; gx += 2) for (var gy = 2; gy < 12; gy += 2) for (var k = 0; k < BLOC_N; k++){
+      var lt = clamp(cur.bloc*BLOC_N - k);
+      if (lt <= 0) continue;
+      items.push({x:gx+0.06,y:gy+0.06,z:k*BLOC_LAYER + (1-ease(lt))*2.2,w:1.88,d:1.88,h:BLOC_LAYER-0.06,c:'--carton',o:lt*cur.blocOp});
+    }
+  }
+  if (cur.rack > 0){
+    var uh = 4.3*ease(clamp(cur.rack*5));
+    rows.forEach(function(y0){
+      for (var ux = 24; ux <= 39; ux += 3){
+        [y0-0.04, y0+1.96].forEach(function(uy){ items.push({x:ux-0.04,y:uy,z:0,w:0.08,d:0.08,h:uh,c:'--steel',o:1}); });
+      }
+      for (var px = 24; px < 39; px++) for (var side = 0; side < 2; side++){
+        var yy = y0 + side;
+        levels.forEach(function(L, li){
+          var lt = clamp(cur.rack*3.2 - 0.2 - li);
+          if (lt <= 0) return;
+          var drop = (1-ease(lt))*1.6;
+          if (li > 0) items.push({x:px,y:yy,z:L.z-0.09,w:1,d:1,h:0.07,c:'--beam',o:Math.min(1,lt*2)});
+          items.push({x:px+0.06,y:yy+0.06,z:L.z+drop,w:0.88,d:0.88,h:L.h-0.04,c:L.c,o:lt});
+        });
+      }
+    });
+  }
+  items.forEach(function(b){ b.key = V(b.x + b.w/2, b.y + b.d/2); });
+  items.sort(function(a, b){ return (a.key - b.key) || (a.z - b.z); });
+  var s = '';
+  for (var i = 0; i < items.length; i++) s += boxSvg(items[i]);
+  $('objs').innerHTML = s;
+}
+var FP = [[8,0],[40,0],[40,19],[34,19],[34,25],[8,25]];
+var FPA = 0;
+FP.forEach(function(p, i){ var q = FP[(i+1)%FP.length]; FPA += p[0]*q[1] - q[0]*p[1]; });
+var FSG = FPA > 0 ? 1 : -1;
+function wall(a, b, z0, z1, cls){
+  return '<polygon class="'+cls+'" points="'+pts([P(a[0],a[1],z0),P(b[0],b[1],z0),P(b[0],b[1],z1),P(a[0],a[1],z1)])+'"/>';
+}
+function drawVol(){
+  var h = 6*ease(clamp(cur.vol)), s = '';
+  if (h > 0.02){
+    var fill = step <= 4, back = '', front = '';
+    FP.forEach(function(a, i){
+      var b = FP[(i+1)%FP.length], nx = (b[1]-a[1])*FSG, ny = -(b[0]-a[0])*FSG;
+      var vis = nx*sT + ny*cT > 0;
+      if (vis) front += wall(a, b, 0, h, fill ? 'vf' : 'vw'); else back += wall(a, b, 0, h, fill ? 'vb' : 'vw');
+    });
+    s = back + '<polygon class="'+(fill?'vt':'vw')+'" points="'+pts(FP.map(function(p){ return P(p[0],p[1],h); }))+'"/>' + front;
+  }
+  $('vol').innerHTML = s;
+}
+function dimV(x, y, z0, z1, label, dx, cls){
+  var a = P(x,y,z0), b = P(x,y,z1), X = a[0] + dx;
+  return '<g class="dim '+(cls||'')+'"><line x1="'+X+'" y1="'+a[1]+'" x2="'+X+'" y2="'+b[1]+'"/>'+
+    '<line x1="'+(X-4)+'" y1="'+a[1]+'" x2="'+(X+4)+'" y2="'+a[1]+'"/><line x1="'+(X-4)+'" y1="'+b[1]+'" x2="'+(X+4)+'" y2="'+b[1]+'"/>'+
+    '<text x="'+(X+7)+'" y="'+((a[1]+b[1])/2+4)+'">'+label+'</text></g>';
+}
+function dimH(p0, p1, lp, label){
+  var a = P(p0[0],p0[1],0), b = P(p1[0],p1[1],0), c = P(lp[0],lp[1],0);
+  return '<g class="dim"><line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'"/>'+
+    '<text x="'+c[0]+'" y="'+(c[1]+4)+'" text-anchor="middle">'+label+'</text></g>';
+}
+function rightmost(list){
+  var best = list[0];
+  list.forEach(function(c){ if (U(c[0],c[1]) > U(best[0],best[1])) best = c; });
+  return best;
+}
+function drawDims(){
+  var s = '';
+  if (step === 0){
+    var yy = cT > 0 ? 27.5 : -2.5, yl = cT > 0 ? 29.5 : -4.5;
+    var xx = sT > 0 ? 42.5 : -2.5, xl = sT > 0 ? 44.5 : -4.5;
+    s += dimH([0,yy],[40,yy],[20,yl],'40 m');
+    s += dimH([xx,0],[xx,25],[xl,12.5],'25 m');
+  }
+  if (step >= 4 && cur.vol > 0.05 && cP > 0.08){
+    var h = 6*ease(clamp(cur.vol)), c = rightmost(FP);
+    s += dimV(c[0], c[1], 0, h, 'H = '+H(h)+' m', 12, 'brut');
+  }
+  if (step === 5 && cur.bloc > 0.02 && cP > 0.08){
+    var BC = [[10,2],[22,2],[22,12],[10,12]], rc = rightmost(BC);
+    var shown = Math.floor(Math.min(BLOC_N, cur.bloc*BLOC_N) + 1e-6) * BLOC_LAYER;
+    if (cur.bloc > 0.98){
+      BC.forEach(function(c, i){
+        var n = BC[(i+1)%4], a = P(c[0],c[1],6), b = P(n[0],n[1],6), d = P(c[0],c[1],4.8);
+        s += '<line class="ghost" x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'"/>';
+        s += '<line class="ghost" x1="'+d[0]+'" y1="'+d[1]+'" x2="'+a[0]+'" y2="'+a[1]+'"/>';
+      });
+      s += dimV(rc[0], rc[1], 4.8, 6, 'reste 1,20 m', 10, '');
+    }
+    if (shown > 0) s += dimV(rc[0], rc[1], 0, shown, 'h = '+H(shown)+' m', 10, 'net');
+  }
+  $('dims').innerHTML = s;
+}
+function draw(){ drawObjs(); drawVol(); drawDims(); }
+var pending = false;
+function redrawView(){
+  if (pending) return; pending = true;
+  requestAnimationFrame(function(){ pending = false; setView(); floorGeom(); draw(); });
+}
+var sel = null;
+function applyFloor(){
+  tiles.forEach(function(t){
+    var st = STATE[t.kind][step];
+    t.el.setAttribute('class', 'tile ' + st + ' ' + t.kind + (sel === t ? ' sel' : ''));
+    t.hat.setAttribute('class', 'hat' + (st === 'x' ? ' on' : ''));
+    var hide = t.kind === 'merch' && step >= 5;
+    if (t.l1){ t.l1.setAttribute('class', 'lbl' + (st === 'x' ? ' off' : '')); t.l1.style.opacity = hide ? 0 : 1; }
+    if (t.l2){
+      t.l2.textContent = (st === 'x' ? '− ' : '') + F(t.a) + ' m²';
+      t.l2.setAttribute('class', 'lbl sub' + (st === 'x' ? ' off' : ''));
+      t.l2.style.opacity = hide ? 0 : 1;
+    }
+  });
+  outline.setAttribute('class', 'outline' + (step === 0 ? ' hl' : ''));
+}
+/* ---------- contenu des étapes ---------- */
+function bars(a, la, b, lb){
+  var pct = b/a*100;
+  return '<div class="bars"><div class="bar">'+la+'<div class="track"><div class="b" style="width:100%"></div></div></div>'+
+    '<div class="bar">'+lb+' → '+F(pct)+' %<div class="track"><div class="n" data-w="'+pct.toFixed(2)+'" style="width:0"></div></div></div></div>';
+}
+var STEPS = [
+  { short:'Surface globale', kick:'Surface', title:'Surface globale',
+    txt:"C'est toute la surface occupée par l'entreprise. Tous les locaux comptent, peu importe leur fonction : bureaux, vestiaires, toilettes, escaliers, stock.",
+    chips:[], cls:'', sym:'Surface globale = longueur × largeur du bâtiment', num:'40 m × 25 m', res:1000, unit:'m²', memo:'',
+    extra:'', keep:"Ici, on ne retire encore rien. C'est le point de départ de tous les calculs." },
+  { short:'Surface brute de stockage', kick:'Surface', title:'Surface brute de stockage',
+    txt:"On retire tout ce qui ne sert pas directement à stocker. Il reste seulement les allées de travail et les zones où la marchandise est posée.",
+    chips:[['Bureaux',80],['Vestiaires',48],['Toilettes',32],['Escaliers',40],['Emballages vides',36],['4 piliers × 1 m²',4]],
+    cls:'brut', sym:'Surface brute de stockage = surface globale − bureaux − vestiaires − toilettes − escaliers − emballages vides − piliers',
+    num:'1 000 − 80 − 48 − 32 − 40 − 36 − 4', res:760, unit:'m²', memo:'SBS = allées de travail + zones de marchandise',
+    extra:'', keep:'La surface brute de stockage contient les allées de travail et les zones occupées par la marchandise.' },
+  { short:'Surface nette de stockage', kick:'Surface', title:'Surface nette de stockage',
+    txt:"On part de la surface brute de stockage et on retire les allées de circulation. Il ne reste que le sol réellement occupé par la marchandise.",
+    chips:[['Allées',520]], cls:'net', sym:'Surface nette de stockage = surface brute de stockage − allées', num:'760 − 520', res:240, unit:'m²', memo:'SNS = SBS − allées',
+    extra:'Contrôle : stock en bloc 120 m² + 4 rayonnages × 30 m² = 240 m²',
+    keep:"Les allées sont indispensables pour travailler, mais on n'y pose jamais de marchandise." },
+  { short:"Taux d'occupation de la surface", kick:'Taux', title:"Taux d'occupation de la surface",
+    txt:"Quelle part de la surface brute de stockage est vraiment occupée par la marchandise ? On divise la surface nette de stockage par la surface brute de stockage, puis on multiplie par 100.",
+    chips:[], cls:'rate', sym:"Taux d'occupation de la surface = surface nette de stockage ÷ surface brute de stockage × 100",
+    num:'240 ÷ 760 × 100', res:31.58, unit:'%', memo:'SNS ÷ SBS × 100',
+    extra: bars(760, 'Surface brute de stockage : 760 m²', 240, 'Surface nette de stockage : 240 m²'),
+    keep:"Sur le plan, la surface brute de stockage, c'est le bleu + l'orange. La surface nette de stockage, c'est seulement l'orange." },
+  { short:'Récapitulatif', kick:'Synthèse', title:'Récapitulatif : les surfaces',
+    txt:"On part de toute la surface de l'entreprise, puis on retire à chaque étape ce qui ne sert pas à stocker la marchandise.",
+    chips:[], cls:'', sym:'', num:'', res:0, unit:'', memo:'',
+    extra:'<div class="flow" style="grid-template-columns:1fr">'+
+      '<div class="node"><b>1 000 m²</b>Surface globale</div>'+
+      '<div class="arrow">− bureaux, vestiaires, toilettes, escaliers, emballages vides, piliers ↓</div>'+
+      '<div class="node brut"><b>760 m²</b>Surface brute de stockage</div>'+
+      '<div class="arrow">− allées ↓</div>'+
+      '<div class="node net"><b>240 m²</b>Surface nette de stockage</div>'+
+      '<div class="arrow">surface nette de stockage ÷ surface brute de stockage × 100 ↓</div>'+
+      '<div class="node"><b>31,58 %</b>Taux d\u2019occupation de la surface</div>'+
+      '</div>',
+    keep:'En évaluation, écris toujours les noms complets et chaque étape du calcul, jamais les abréviations.' }
+];
+var Z = {vol:0,bloc:0,rack:0,blocOp:1};
+var TARGET = [Z,Z,Z,Z,Z];
+var DUR = [700,700,700,700,700];
+var LEGENDS = [
+  [['--annex1','Annexes'],['--aisle','Allées'],['--merch','Marchandise'],['--pillar','Piliers']],
+  [['--brut-soft','Compte dans la surface brute de stockage'],['hat','Exclu']],
+  [['--net-soft','Compte dans la surface nette de stockage'],['hat','Exclu']],
+  [['--brut-soft','Allées (surface brute de stockage)'],['--net-soft','Surface nette de stockage'],['hat','Exclu']],
+  [['--annex1','Annexes'],['--aisle','Allées'],['--net-soft','Surface nette de stockage'],['--pillar','Piliers']]
+];
+var stepsNav = $('steps');
+STEPS.forEach(function(s, i){
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.innerHTML = '<b>'+(i+1)+'</b><span class="lbl">'+s.short+'</span>'; b.title = s.short;
+  b.addEventListener('click', function(){ go(i, true); });
+  stepsNav.appendChild(b);
+});
+function countUp(node, v){
+  var dec = v % 1 ? 2 : 0;
+  if (reduce){ node.textContent = F(v); return; }
+  var t0 = performance.now(), d = 900;
+  function f(now){
+    var p = clamp((now - t0)/d), x = v*ease(p);
+    node.textContent = F(dec ? Math.round(x*100)/100 : Math.round(x));
+    if (p < 1) requestAnimationFrame(f);
+  }
+  requestAnimationFrame(f);
+}
+function updatePanel(){
+  var s = STEPS[step];
+  $('pn').textContent = step + 1;
+  $('pk').textContent = s.kick;
+  $('pt').textContent = s.title;
+  $('px').textContent = s.txt;
+  var pc = $('pc');
+  pc.innerHTML = s.chips.map(function(c){ return '<span class="chip minus">'+c[0]+' '+F(c[1])+' m²</span>'; }).join('');
+  pc.style.display = s.chips.length ? '' : 'none';
+  var pf = $('pf');
+  if (s.sym){
+    pf.style.display = '';
+    pf.className = 'formula ' + s.cls;
+    pf.innerHTML = '<div class="f-sym">'+s.sym+'</div><div class="f-num">'+s.num+'</div><div class="f-res">= <span class="cnt">0</span> <small>'+s.unit+'</small></div>'+
+      (s.memo ? '<div class="memo"><span>Mémo</span>'+s.memo+'</div>' : '');
+    countUp(pf.querySelector('.cnt'), s.res);
+  } else { pf.style.display = 'none'; pf.innerHTML = ''; }
+  var pe = $('pe');
+  pe.innerHTML = s.extra; pe.style.display = s.extra ? '' : 'none';
+  var fills = pe.querySelectorAll('[data-w]');
+  if (fills.length) requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    Array.prototype.forEach.call(fills, function(f){ f.style.width = f.getAttribute('data-w') + '%'; });
+  }); });
+  $('pr').innerHTML = '<b>À retenir</b>' + s.keep;
+  $('fslab').textContent = 'Étape ' + (step + 1) + ' / ' + STEPS.length + ' · ' + s.title;
+  $('fsprev').disabled = step === 0;
+  $('fsnext').disabled = step === STEPS.length - 1;
+  $('prev').disabled = step === 0;
+  $('next').disabled = step === STEPS.length - 1;
+  Array.prototype.forEach.call(stepsNav.children, function(b, i){
+    if (i === step) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+    b.classList.toggle('done', i < step);
+  });
+  var btn = stepsNav.children[step];
+  if (btn) { try { stepsNav.scrollTo({left: btn.offsetLeft - 20, behavior: reduce ? 'auto' : 'smooth'}); } catch(e){} }
+  $('legend').innerHTML = LEGENDS[step].map(function(l){
+    return l[0] === 'hat' ? '<span><i class="hz"></i>'+l[1]+'</span>' : '<span><i style="background:var('+l[0]+')"></i>'+l[1]+'</span>';
+  }).join('');
+  if (sel) showInfo(sel);
+}
+var raf = 0;
+function go(n, animate, fromState){
+  step = n;
+  applyFloor(); updatePanel();
+  var tg = TARGET[n];
+  cancelAnimationFrame(raf);
+  if (!animate || reduce){ cur = Object.assign({}, tg); draw(); return; }
+  var from = Object.assign({}, fromState || cur), t0 = performance.now(), dur = DUR[n];
+  function tick(now){
+    var p = clamp((now - t0)/dur);
+    for (var k in tg) cur[k] = from[k] + (tg[k] - from[k])*p;
+    draw();
+    if (p < 1) raf = requestAnimationFrame(tick);
+  }
+  raf = requestAnimationFrame(tick);
+}
+$('prev').addEventListener('click', function(){ if (step > 0) go(step - 1, true); });
+$('next').addEventListener('click', function(){ if (step < STEPS.length - 1) go(step + 1, true); });
+$('replay').addEventListener('click', function(){
+  var base = step > 0 ? TARGET[step-1] : Z;
+  if (step >= 7) base = {vol:1,bloc:0,rack:0,blocOp:1};
+  go(step, true, base);
+});
+document.addEventListener('keydown', function(e){
+  var path = e.composedPath ? e.composedPath() : [];
+  if (path.indexOf(host) === -1) return;
+  var t = path[0] && path[0].tagName;
+  if (t === 'INPUT' || t === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight' && step < STEPS.length - 1) go(step + 1, true);
+  if (e.key === 'ArrowLeft' && step > 0) go(step - 1, true);
+});
+/* ---------- rotation au doigt / à la souris ---------- */
+var drag = null, moved = false;
+svg.addEventListener('pointerdown', function(e){
+  if (e.button !== undefined && e.button !== 0) return;
+  drag = {x:e.clientX, y:e.clientY, th:view.th, ph:view.ph};
+  moved = false;
+  cancelAnimationFrame(vraf);
+});
+window.addEventListener('pointermove', function(e){
+  if (!drag) return;
+  var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!moved && Math.abs(dx) + Math.abs(dy) < 5) return;
+  moved = true; svg.classList.add('dragging');
+  var k = 700 / (svg.getBoundingClientRect().width || 700);
+  view.th = drag.th - dx*0.45*k;
+  view.ph = Math.max(8, Math.min(89.5, drag.ph + dy*0.35*k));
+  redrawView();
+});
+function endDrag(){ drag = null; svg.classList.remove('dragging'); }
+window.addEventListener('pointerup', endDrag);
+window.addEventListener('pointercancel', endDrag);
+var vraf = 0;
+function animView(th, ph){
+  cancelAnimationFrame(vraf);
+  var d = ((th - view.th) % 360 + 540) % 360 - 180;
+  var t0 = performance.now(), th0 = view.th, ph0 = view.ph, dur = reduce ? 1 : 650;
+  function f(now){
+    var p = ease(clamp((now - t0)/dur));
+    view.th = th0 + d*p; view.ph = ph0 + (ph - ph0)*p;
+    setView(); floorGeom(); draw();
+    if (p < 1) vraf = requestAnimationFrame(f);
+  }
+  vraf = requestAnimationFrame(f);
+}
+$('v3d').addEventListener('click', function(){ animView(DEF.th, DEF.ph); });
+$('vtop').addEventListener('click', function(){ animView(0, 89.5); });
+$('vfront').addEventListener('click', function(){ animView(0, 10); });
+/* ---------- onglets ---------- */
+var tabBtns = root.querySelectorAll('.tabs button'), panes = root.querySelectorAll('.tabpane');
+function showTab(name){
+  Array.prototype.forEach.call(panes, function(p){ p.classList.toggle('on', p.getAttribute('data-tab') === name); });
+  Array.prototype.forEach.call(tabBtns, function(b){ b.setAttribute('aria-selected', b.getAttribute('data-go') === name ? 'true' : 'false'); });
+  if (name === 'anim') { setView(); floorGeom(); draw(); }
+}
+Array.prototype.forEach.call(tabBtns, function(b){ b.addEventListener('click', function(){ showTab(b.getAttribute('data-go')); }); });
+
+/* ---------- agrandir / plein écran ---------- */
+var stageEl = root.querySelector('.stage'), appEl = root.querySelector('.app');
+$('vbig').addEventListener('click', function(){
+  var on = !appEl.classList.contains('large');
+  appEl.classList.toggle('large', on);
+  this.classList.toggle('on', on);
+  this.setAttribute('aria-pressed', on ? 'true' : 'false');
+  this.textContent = on ? '⤡' : '⤢'; this.title = on ? 'Réduire la vue 3D' : 'Agrandir la vue 3D';
+  if (on && stageEl.scrollIntoView) { try { stageEl.scrollIntoView({block:'start', behavior: reduce ? 'auto' : 'smooth'}); } catch(e){} }
+});
+var canFs = !!(stageEl.requestFullscreen || stageEl.webkitRequestFullscreen);
+if (!canFs) $('vfs').style.display = 'none';
+function fsActive(){ return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+function exitFs(){ if (document.exitFullscreen) document.exitFullscreen(); else if (document.webkitExitFullscreen) document.webkitExitFullscreen(); }
+$('vfs').addEventListener('click', function(){
+  if (fsActive()) { exitFs(); return; }
+  try {
+    var r = stageEl.requestFullscreen ? stageEl.requestFullscreen() : stageEl.webkitRequestFullscreen();
+    if (r && r.catch) r.catch(function(){ $('vfs').style.display = 'none'; });
+  } catch(e) { $('vfs').style.display = 'none'; }
+});
+function onFs(){
+  var on = fsActive();
+  document.documentElement.style.overflow = on ? 'hidden' : (window.frameElement ? 'hidden' : '');
+  stageEl.classList.toggle('fs', on);
+  if (!on) setTimeout(fit, 60);
+  $('vfs').title = on ? 'Quitter le plein écran' : 'Plein écran';
+}
+document.addEventListener('fullscreenchange', onFs);
+document.addEventListener('webkitfullscreenchange', onFs);
+$('fsexit').addEventListener('click', exitFs);
+$('fsprev').addEventListener('click', function(){ if (step > 0) go(step - 1, true); });
+$('fsnext').addEventListener('click', function(){ if (step < STEPS.length - 1) go(step + 1, true); });
+
+/* ---------- info zone ---------- */
+function showInfo(t){
+  var m = MEM[t.kind];
+  var lab = ['Surface globale','Surface brute de stockage','Surface nette de stockage'];
+  var dims = t.dims ? F(t.a)+' m² ('+t.dims+')' : (t.w + ' m × ' + t.d + ' m = ' + F(t.a) + ' m²');
+  $('caption').innerHTML =
+    '<strong>'+t.name+'</strong><span>'+dims+'</span>'+
+    '<span class="mem">'+m.map(function(v, i){ return '<span class="'+(v?'yes':'no')+'">'+lab[i]+'</span>'; }).join('')+'</span>';
+}
+svg.addEventListener('click', function(e){
+  if (moved){ moved = false; return; }
+  var n = e.target.closest ? e.target.closest('[data-i]') : null;
+  if (!n) return;
+  sel = tiles[+n.getAttribute('data-i')];
+  applyFloor(); showInfo(sel);
+});
+floorGeom();
+go(0, false);
+/* ---------- exercice ---------- */
+function ri(a, b){ return a + Math.floor(Math.random()*(b - a + 1)); }
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+function rnd(a, b){ return a + Math.random()*(b - a); }
+function r5(v){ return Math.max(5, Math.round(v/5)*5); }
+function r10(v){ return Math.max(10, Math.round(v/10)*10); }
+function r2(v){ return Math.round(v*100)/100; }
+var EX = null;
+function newEx(){
+  var L = pick([40,45,50,55,60,70,80]), l = pick([20,25,30,35,40]), G = L*l;
+  var bur = r5(G*rnd(.06,.1)), ves = r5(G*rnd(.03,.05)), esc = r5(G*rnd(.015,.03)), emb = Math.round(G*rnd(.02,.04)/2)*2, np = ri(4,12);
+  var sbs = G - bur - ves - esc - emb - np;
+  var al = r10(sbs*rnd(.5,.62)), sn = sbs - al;
+  var Hb = pick([6,6.5,7,7.5,8,9,10]);
+  var blocA = r10(sn*rnd(.3,.45)), hc = pick([1,1.1,1.2,1.25,1.5,1.6]), nmax = ri(3,6);
+  var nfit = Math.floor(Hb/hc + 1e-9), nc = Math.min(nfit, nmax), hb = r2(nc*hc);
+  var foot = sn - blocA;
+  var hs = [1,1.2,1.5,1.8].sort(function(){ return Math.random() - .5; }).slice(0,3).sort(function(a,b){ return b - a; });
+  var ns = [r10(foot*rnd(.8,1)), r10(foot*rnd(.6,1)), r10(foot*rnd(.4,.9))];
+  var vb = r2(blocA*hb), vr = r2(ns[0]*hs[0] + ns[1]*hs[1] + ns[2]*hs[2]), vbs = r2(sbs*Hb), vns = r2(vb + vr);
+  EX = {L:L,l:l,G:G,bur:bur,ves:ves,esc:esc,emb:emb,np:np,sbs:sbs,al:al,sn:sn,Hb:Hb,blocA:blocA,hc:hc,nmax:nmax,nfit:nfit,nc:nc,hb:hb,hs:hs,ns:ns,vb:vb,vr:vr,vbs:vbs,vns:vns,
+        ts:sn/sbs*100, tv:vns/vbs*100};
+  EX.ans = [G, sbs, sn, EX.ts];
+  $('scen').innerHTML =
+    '<strong>Ton entrepôt</strong><ul>'+
+    '<li>Bâtiment de '+L+' m × '+l+' m</li>'+
+    '<li>Bureaux '+F(bur)+' m², vestiaires et toilettes '+F(ves)+' m², escaliers '+F(esc)+' m²</li>'+
+    '<li>Zone d’emballages vides '+F(emb)+' m², '+np+' piliers de 1 m²</li>'+
+    '<li>Allées de travail : '+F(al)+' m²</li></ul>'+
+    '<div style="margin-top:6px;font-size:13px;color:var(--muted)">Arrondis le taux à 2 décimales.</div>';
+  for (var i = 1; i <= 4; i++){
+    var inp = $('a'+i); inp.value = ''; inp.className = '';
+    $('m'+i).textContent = '';
+  }
+  $('score').textContent = '';
+  var c = $('corr'); c.hidden = true; c.innerHTML = '';
+}
+function parse(v){ v = String(v).replace(/[\s '’%]/g, '').replace(',', '.'); return v === '' ? NaN : Number(v); }
+$('exform').addEventListener('submit', function(e){
+  e.preventDefault();
+  var ok = 0;
+  for (var i = 1; i <= 4; i++){
+    var inp = $('a'+i), v = parse(inp.value), a = EX.ans[i-1], m = $('m'+i);
+    if (isNaN(v)){ inp.className = ''; m.textContent = ''; continue; }
+    var tol = (i === 4) ? 0.1 : Math.max(0.5, a*0.001);
+    var good = Math.abs(v - a) <= tol;
+    inp.className = good ? 'ok' : 'ko'; m.textContent = good ? '✓' : '✗';
+    m.style.color = good ? '#2f9e5a' : '#d0453f';
+    if (good) ok++;
+  }
+  $('score').textContent = ok + ' / 4 juste' + (ok > 1 ? 's' : '') + (ok === 4 ? '. Bravo, tout est correct !' : '. Corrige les cases rouges ou regarde la correction.');
+});
+$('showc').addEventListener('click', function(){
+  var x = EX, c = $('corr');
+  c.innerHTML =
+    '<div><b>Surface globale</b> = '+x.L+' m × '+x.l+' m = '+F(x.G)+' m²</div>'+
+    '<div><b>Surface brute de stockage</b> = surface globale '+F(x.G)+' − bureaux '+F(x.bur)+' − vestiaires et toilettes '+F(x.ves)+' − escaliers '+F(x.esc)+' − emballages vides '+F(x.emb)+' − piliers '+x.np+' = '+F(x.sbs)+' m²</div>'+
+    '<div><b>Surface nette de stockage</b> = surface brute de stockage '+F(x.sbs)+' − allées '+F(x.al)+' = '+F(x.sn)+' m²</div>'+
+    '<div><b>Taux d’occupation de la surface</b> = '+F(x.sn)+' ÷ '+F(x.sbs)+' × 100 = '+F(x.ts)+' %</div>';
+  c.hidden = false;
+});
+$('newex').addEventListener('click', newEx);
+newEx();
+})();
+</script>
+</body>
+</html>
